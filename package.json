@@ -1,0 +1,14 @@
+{
+  "name": "rv4-js-engines-optimizations-comparator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Mikalai Chaliadzinau",
+  "license": "MIT",
+  "dependencies": {
+    "pidusage-tree": "^2.0.5"
+  }
+}
