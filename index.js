@@ -53,6 +53,8 @@ function printProcessInfo(p) {
             } else if(err) {
                 console.error(err);
                 p.childProcess.kill();
+                const idx = cPs.findIndex(cp => cp.childProcess.pid === p.childProcess.pid);
+                cPs.splice(idx, 1);
                 return;
             }
             false && console.log(stats);
