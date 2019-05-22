@@ -2,23 +2,25 @@ const path = require('path');
 const fs = require('fs');
 const { execFile }  = require('child_process');
 
-const ENG_V8 = path.resolve(process.env.HOME,'.jsvu/engines/v8/v8');
-const ENG_JSC = path.resolve(process.env.HOME,'.jsvu/engines/javascriptcore/jsc');
-const ENG_SM = path.resolve(process.env.HOME,'.jsvu/engines/spidermonkey/spidermonkey');
-const ENG_CHAKRA = path.resolve(process.env.HOME,'.jsvu/engines/chakra/chakra');
+const ENGS = {
+    V8: path.resolve(process.env.HOME,'.jsvu/engines/v8/v8'),
+    JSC: path.resolve(process.env.HOME,'.jsvu/engines/javascriptcore/jsc'),
+    SM: path.resolve(process.env.HOME,'.jsvu/engines/spidermonkey/spidermonkey'),
+    CHAKRA: path.resolve(process.env.HOME,'.jsvu/engines/chakra/chakra'),
+    _DATA: {
+        V8: {memOverhead: 0}
+    }
+}
 const PATH_TESTS = path.resolve(process.cwd(), 'tests');
 
 const pidusageTree = require('pidusage-tree');
 
 // const command = 'let i = 0; let str = "string"; while(i < 99999999999999) { i++;  str += i*i*i;} print(1)';
 // const childProcessV8 = execFile(ENG_V8, ['-e', command],{}, (err, stdout, stderr)=>console.log(err, stdout, stderr)); 
-const ENGINES_DATA = {
-    V8: {memOverhead: 0}
-};
 
 const testScripts = fs.readdirSync(PATH_TESTS, {withFileTypes: true}).filter(file => path.extname(file.name) === '.js').map(file=> path.resolve(PATH_TESTS,file.name) );
 
-const cPs = createV8Processes(testScripts);
+const cPs = createProcesses('V8', testScripts);
 
 console.log('testScripts:', testScripts);
 // process.platform.indexOf('win') === 0 && console.log('\t Results may be not accurate on ', process.platform)
@@ -30,16 +32,16 @@ const intId = setInterval(() => {
 },
 2000);
 
-function handleExecFileResult (err, stdout, stderr) {
-    console.log(err, stdout, stderr);
+function handleExecFileResult (engineName, script, err, stdout, stderr) {
+    console.log(engineName, script, err, stdout.replace(/\n/g, ' '), stderr);
 }
 
-function createV8Processes(scriptsList) {
+function createProcesses(engineName, scriptsList) {
     return scriptsList.map(script => {
-        const childProcess = execFile(ENG_V8, [script], {}, handleExecFileResult);
+        const childProcess = execFile(ENGS[engineName], [script], {}, (err, stdout, stderr) => handleExecFileResult(engineName, script, err, stdout, stderr));
         return  {
             script: path.basename(script),
-            engine: 'V8',
+            engine: engineName,
             childProcess,
          }
     });
@@ -71,7 +73,7 @@ function printProcessInfo(p) {
             console.log(p.script, '\t', cpu, '\t', mem );
             if(p.script === 'dryrun.js') {
                 p.childProcess.kill();
-                ENGINES_DATA[p.engine].memOverhead = mem;
+                ENGS._DATA[p.engine].memOverhead = mem;
             }
             // => {
             //   cpu: 10.0,            // percentage (from 0 to 100*vcore)
