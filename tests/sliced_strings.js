@@ -36,7 +36,7 @@ function clearString(str) {
     test_arr.push(huge.substr(i,25)); //Мешаем оптимизатору.
   }
   
-  console.log(Test(test_arr,clearString));
-  console.log(Test(test_arr,clearString2));
-  console.log(Test(test_arr,clearString3));
-  console.log(Test(test_arr,clearStringFast));
+  print(Test(test_arr,clearString));
+  print(Test(test_arr,clearString2));
+  print(Test(test_arr,clearString3));
+  print(Test(test_arr,clearStringFast));
