@@ -13,7 +13,8 @@ const {
     checkIfProcessFinishedCorrectly,
     printOSL, 
     processPidusageStats, 
-    execDryRun
+    execDryRun,
+    getOsDependatnFullPath
 } = require('./utils');
 
 const ARGS = process.argv.slice(2);
@@ -26,30 +27,45 @@ const tests = fs.readdirSync(PATH_TESTS, {withFileTypes: true})
 
 const [V8, JSC, SM, CHAKRA] = ['V8','JSC','SM','CHAKRA'];
 const ENGS = {
+    list: [V8, JSC, SM, CHAKRA],
     [V8]: {
         memOverhead: 0, timeOverhead: 0,
-        path: path.resolve(process.env.HOME,'.jsvu/engines/v8/v8'),
+        path: getOsDependatnFullPath( path.resolve(process.env.HOME,'.jsvu/v8') ),
         testsQueue: [...tests], testsPassed: [], testsFailed: []
     },
     [JSC]: {
         memOverhead: 0, timeOverhead: 0,
-        path: path.resolve(process.env.HOME,'.jsvu/engines/javascriptcore/javascriptcore'),
+        path: getOsDependatnFullPath( path.resolve(process.env.HOME,'.jsvu/jsc') ),
         testsQueue: [...tests], testsPassed: [], testsFailed: []
     },
     [SM]: {
         memOverhead: 0, timeOverhead: 0,
-        path: path.resolve(process.env.HOME,'.jsvu/engines/spidermonkey/spidermonkey'),
+        path: getOsDependatnFullPath( path.resolve(process.env.HOME,'.jsvu/sm') ),
         testsQueue: [...tests], testsPassed: [], testsFailed: []
     },
     [CHAKRA]: {
         memOverhead: 0, timeOverhead: 0,
-        path: path.resolve(process.env.HOME,'.jsvu/engines/chakra/chakra'),
+        path: getOsDependatnFullPath( path.resolve(process.env.HOME,'.jsvu/chakra') ),
         testsQueue: [...tests], testsPassed: [], testsFailed: []
     }
 }
 
 const processes = [];
-const results = [];
+
+const testEngines = engineNamesList => {
+    // process.platform.indexOf('win') === 0 && console.log('\t Results may be not accurate on ', process.platform)
+    let chain = Promise.resolve(1);
+    for(let i = 0; i < ENGS.list.length; i++) {
+        const engineName = ENGS.list[i];
+        if (fs.existsSync(ENGS[engineName].path))
+            chain = chain.then( () => testEngine(ENGS.list[i]) );
+    }
+    chain.then(()=>{
+        console.log(ENGS);
+    });
+    return chain;
+} 
+
 const testEngine = engineName => {
     return execDryRun(ENGS[engineName].path, false).then(time => {
         ENGS[engineName].timeOverhead = time;
@@ -72,17 +88,6 @@ const startEngineTests = engineName => (
         )
     })
 );
-    
-testEngine(V8).then(results => {
-    // console.log(results);
-    return testEngine(SM).then(() => {
-        return testEngine(JSC);
-    });
-}).then(()=>{
-    console.log(ENGS);
-});
-
-    // process.platform.indexOf('win') === 0 && console.log('\t Results may be not accurate on ', process.platform)
 
 const intId = setInterval(() => {
     processes.forEach(cp => {
@@ -175,3 +180,5 @@ const pidUsageCallback = (err, stats, p) => {
     //   timestamp: 864000000  // ms since epoch
     //
 };
+
+testEngines([V8]);
