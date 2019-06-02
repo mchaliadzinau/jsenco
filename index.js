@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const { execFile }  = require('child_process');
 const pidusageTree = require('pidusage-tree');
+const kill = require('tree-kill');
 const { performance } = require('perf_hooks');
 
 const {
@@ -19,7 +20,7 @@ const {
 
 const ARGS = process.argv.slice(2);
 const PATH_TESTS = path.resolve(process.cwd(), 'tests');
-const TIMEOUT = 6000;
+const TIMEOUT = 10000;
 
 const tests = fs.readdirSync(PATH_TESTS, {withFileTypes: true})
     .filter(file => path.extname(file.name) === '.js')
@@ -54,11 +55,12 @@ const processes = [];
 
 const testEngines = engineNamesList => {
     // process.platform.indexOf('win') === 0 && console.log('\t Results may be not accurate on ', process.platform)
+    const list = engineNamesList || ENGS.list
     let chain = Promise.resolve(1);
-    for(let i = 0; i < ENGS.list.length; i++) {
-        const engineName = ENGS.list[i];
+    for(let i = 0; i < list.length; i++) {
+        const engineName = list[i];
         if (fs.existsSync(ENGS[engineName].path))
-            chain = chain.then( () => testEngine(ENGS.list[i]) );
+            chain = chain.then( () => testEngine(list[i]) );
     }
     chain.then(()=>{
         console.log(ENGS);
@@ -91,11 +93,15 @@ const startEngineTests = engineName => (
 
 const intId = setInterval(() => {
     processes.forEach(cp => {
-        if(performance.now() - cp.startTime < TIMEOUT) {
-            printProcessInfo(cp);
-        } else {
-            cp.childProcess.kill();
-            cp.isTimedOut = true;
+        if ( checkIfProcessExists(cp.childProcess) ) {
+            if(performance.now() - cp.startTime < TIMEOUT) {
+                pidusageTree(cp.childProcess.pid, function(err, stats) {
+                    pidUsageCallback(err, stats, cp);
+                });
+            } else {
+                kill(cp.childProcess.pid, err => cp.childProcess.kill() );
+                cp.isTimedOut = true;
+            }
         }
     });
 },
@@ -144,20 +150,12 @@ function createProcess(engineName, script, callback) {
     }
 }
 
-function printProcessInfo(p) {
-    if ( checkIfProcessExists(p.childProcess) ) {
-        pidusageTree(p.childProcess.pid, function(err, stats) {
-            pidUsageCallback(err, stats, p);
-        });
-    } 
-}
-
 const pidUsageCallback = (err, stats, p) => {
     if( !checkIfProcessExists(p.childProcess) ) {
         return;
     } else if(err) {
         console.error(err);
-        p.childProcess.kill();
+        kill(p.childProcess.pid, err => p.childProcess.kill() );
         const idx = cPs.findIndex(cp => cp.childProcess.pid === p.childProcess.pid);
         cPs.splice(idx, 1);
         return;

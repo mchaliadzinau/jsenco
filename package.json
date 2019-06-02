@@ -9,6 +9,7 @@
   "author": "Mikalai Chaliadzinau",
   "license": "MIT",
   "dependencies": {
-    "pidusage-tree": "^2.0.5"
+    "pidusage-tree": "^2.0.5",
+    "tree-kill": "^1.2.1"
   }
 }
