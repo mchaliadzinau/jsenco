@@ -52,7 +52,7 @@ const execDryRun = (enginePath, forever) => {
     })
 }
 
-const getOsDependatnFullPath = path => ~process.platform.indexOf('win') ? `${path}.cmd` : path;
+const getOsDependantFullPath = path => ~process.platform.indexOf('win32') ? `${path}.cmd` : path;
 
 module.exports = {
     checkIfProcessExists,
@@ -60,5 +60,5 @@ module.exports = {
     printOSL,
     processPidusageStats,
     execDryRun,
-    getOsDependatnFullPath
+    getOsDependantFullPath
 }

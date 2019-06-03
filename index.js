@@ -15,7 +15,7 @@ const {
     printOSL, 
     processPidusageStats, 
     execDryRun,
-    getOsDependatnFullPath
+    getOsDependantFullPath
 } = require('./utils');
 
 const ARGS = process.argv.slice(2);
@@ -31,22 +31,22 @@ const ENGS = {
     list: [V8, JSC, SM, CHAKRA],
     [V8]: {
         memOverhead: 0, timeOverhead: 0,
-        path: getOsDependatnFullPath( path.resolve(process.env.HOME,'.jsvu/v8') ),
+        path: getOsDependantFullPath( path.resolve(process.env.HOME,'.jsvu/v8') ),
         testsQueue: [...tests], testsPassed: [], testsFailed: []
     },
     [JSC]: {
         memOverhead: 0, timeOverhead: 0,
-        path: getOsDependatnFullPath( path.resolve(process.env.HOME,'.jsvu/jsc') ),
+        path: getOsDependantFullPath( path.resolve(process.env.HOME,'.jsvu/jsc') ),
         testsQueue: [...tests], testsPassed: [], testsFailed: []
     },
     [SM]: {
         memOverhead: 0, timeOverhead: 0,
-        path: getOsDependatnFullPath( path.resolve(process.env.HOME,'.jsvu/sm') ),
+        path: getOsDependantFullPath( path.resolve(process.env.HOME,'.jsvu/sm') ),
         testsQueue: [...tests], testsPassed: [], testsFailed: []
     },
     [CHAKRA]: {
         memOverhead: 0, timeOverhead: 0,
-        path: getOsDependatnFullPath( path.resolve(process.env.HOME,'.jsvu/chakra') ),
+        path: getOsDependantFullPath( path.resolve(process.env.HOME,'.jsvu/chakra') ),
         testsQueue: [...tests], testsPassed: [], testsFailed: []
     }
 }
