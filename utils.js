@@ -1,6 +1,7 @@
 const { execFile }  = require('child_process');
 const pidusageTree = require('pidusage-tree');
 const { performance } = require('perf_hooks');
+const kill = require('tree-kill');
 
 const checkIfProcessExists = cp => !(cp.exitCode === 0 || cp.killed);
 
@@ -40,9 +41,9 @@ const execDryRun = (enginePath, forever) => {
         dryRunProcess.on('connection', (a) => {
             console.log(a);
         })
-        if(forever && dryRunProcess.connected) {
+        if(forever) {
             pidusageTree(dryRunProcess.pid, function(err, stats) {
-                dryRunProcess.kill();
+                killProcess(dryRunProcess);
                 const [cpu, mem] = processPidusageStats(stats)
                 resolve(mem);
             });
@@ -54,11 +55,18 @@ const execDryRun = (enginePath, forever) => {
 
 const getOsDependantFullPath = path => ~process.platform.indexOf('win32') ? `${path}.cmd` : path;
 
+const killProcess = process => {
+    console.log('# killing ', process.pid)
+    // process.kill();
+    kill(process.pid, err => err && console.err(err) );
+};
+
 module.exports = {
     checkIfProcessExists,
     checkIfProcessFinishedCorrectly,
     printOSL,
     processPidusageStats,
     execDryRun,
-    getOsDependantFullPath
+    getOsDependantFullPath,
+    killProcess
 }

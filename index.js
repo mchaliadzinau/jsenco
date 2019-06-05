@@ -6,7 +6,6 @@ const path = require('path');
 const fs = require('fs');
 const { execFile }  = require('child_process');
 const pidusageTree = require('pidusage-tree');
-const kill = require('tree-kill');
 const { performance } = require('perf_hooks');
 
 const {
@@ -15,7 +14,8 @@ const {
     printOSL, 
     processPidusageStats, 
     execDryRun,
-    getOsDependantFullPath
+    getOsDependantFullPath,
+    killProcess
 } = require('./utils');
 
 const ARGS = process.argv.slice(2);
@@ -91,7 +91,7 @@ const startEngineTests = engineName => (
     })
 );
 
-const intId = setInterval(() => {
+const interval = setInterval(() => {
     processes.forEach(cp => {
         if ( checkIfProcessExists(cp.childProcess) ) {
             if(performance.now() - cp.startTime < TIMEOUT) {
@@ -99,7 +99,7 @@ const intId = setInterval(() => {
                     pidUsageCallback(err, stats, cp);
                 });
             } else {
-                kill(cp.childProcess.pid, err => cp.childProcess.kill() );
+                killProcess(cp.childProcess);
                 cp.isTimedOut = true;
             }
         }
@@ -155,7 +155,7 @@ const pidUsageCallback = (err, stats, p) => {
         return;
     } else if(err) {
         console.error(err);
-        kill(p.childProcess.pid, err => p.childProcess.kill() );
+        killProcess(p.childProcess);
         const idx = cPs.findIndex(cp => cp.childProcess.pid === p.childProcess.pid);
         cPs.splice(idx, 1);
         return;
@@ -179,4 +179,4 @@ const pidUsageCallback = (err, stats, p) => {
     //
 };
 
-testEngines([V8]);
+testEngines([V8]).then(()=> clearInterval(interval));
