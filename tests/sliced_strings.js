@@ -4,7 +4,9 @@
  * SOURCE: https://habr.com/ru/post/449368
  */
 
-function clearString(str) {
+  const COUNT = 1000000;
+
+  function clearString(str) {
     return str.split('').join('');
   }
   function clearString2(str) {
@@ -15,7 +17,6 @@ function clearString(str) {
     //То есть в итоге строка занимает чуть больше
     return (' ' + str).slice(1);
   }
-
   function clearStringFast(str) {
     return str.length < 12 ? str : (' ' + str).slice(1);
   }
@@ -23,7 +24,7 @@ function clearString(str) {
   function Test(test_arr,fn) {
     let check1 = Date.now();
     let a = []; //Мешаем оптимизатору.
-    for(let i=0;i<1000000;i++){
+    for(let i=0; i < COUNT;i++){
       a.push(fn(test_arr[i]));
     }
     let check2 = Date.now();
@@ -32,11 +33,11 @@ function clearString(str) {
   
   var huge = "x".repeat(15).repeat(1024).repeat(1024); // 15Mb string
   var test_arr = [];
-  for(let i=0;i<1000000;i++) {
+  for(let i=0;i < COUNT;i++) {
     test_arr.push(huge.substr(i,25)); //Мешаем оптимизатору.
   }
   
-  print(Test(test_arr,clearString));
-  print(Test(test_arr,clearString2));
-  print(Test(test_arr,clearString3));
-  print(Test(test_arr,clearStringFast));
+  print(COUNT);
+  // print(Test(test_arr,clearString2));
+  // print(Test(test_arr,clearString3));
+  // print(Test(test_arr,clearStringFast));

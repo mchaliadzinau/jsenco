@@ -1,9 +1,8 @@
+const COUNT = 1;
 let i = 0;
 let str = "string";
-while(i < 99999999999999) {
+while(i < COUNT) {
     i++;
-    str += i*i*i;
+    str += i;
 }
-print(1);
-
-print('Hello from hello.js!');
+print(COUNT);
