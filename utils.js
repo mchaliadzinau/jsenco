@@ -1,7 +1,12 @@
 const { execFile }  = require('child_process');
-const pidusageTree = require('pidusage-tree');
+const path = require('path');
 const { performance } = require('perf_hooks');
+const pidusageTree = require('pidusage-tree');
 const kill = require('tree-kill');
+
+const TEST_DRYRUN = path.resolve(process.cwd(), 'core/tests/dryrun.js');
+const TEST_DRYLOOP = path.resolve(process.cwd(), 'core/tests/dryloop.js');
+
 
 const checkIfProcessExists = cp => !(cp.exitCode === 0 || cp.killed);
 
@@ -32,10 +37,11 @@ const processPidusageStats = (stats, memOverhead = 0) => {
 const execDryRun = (enginePath, forever) => {
     return new Promise((resolve,reject) => {
         const startTime = performance.now();
-        const command = forever ? 'while(1) {}' : 0;
-        const dryRunProcess = execFile(enginePath, ['-e', command],{}, (err, stdout, stderr)=>{
+
+        const script = forever ? TEST_DRYLOOP : TEST_DRYRUN;
+        const dryRunProcess = execFile(enginePath, [script],{}, (err, stdout, stderr)=>{
             if(err || stderr) {
-                reject({err, stderr});
+                return reject({err, stderr});
             }
         });
         dryRunProcess.on('connection', (a) => {
