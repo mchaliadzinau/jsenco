@@ -52,6 +52,8 @@ const execDryRun = (enginePath, forever) => {
                 killProcess(dryRunProcess);
                 const [cpu, mem] = processPidusageStats(stats)
                 resolve(mem);
+            }).catch(err => {
+                console.warn('#WARN: ', `${enginePath} dryrun ended too quickly. Memory data will include engine overhead.`);
             });
         } else {
             resolve(performance.now() - startTime);

@@ -97,13 +97,13 @@ const interval = setInterval(() => {
     processes.forEach(cp => {
         if ( checkIfProcessExists(cp.childProcess) ) {
             if(performance.now() - cp.startTime < TIMEOUT) {
-                try {
-                    pidusageTree(cp.childProcess.pid, function(err, stats) {
-                        pidUsageCallback(err, stats, cp);
-                    });
-                } catch (e) {
-                    console.warn(e);
-                }
+                pidusageTree(cp.childProcess.pid, function(err, stats) {
+                    pidUsageCallback(err, stats, cp);
+                }).catch((e) => {
+                    if(cp.cpuVals.length + cp.memVals.length === 0) {
+                        console.warn('#WARN: ', `${cp.engine}:${cp.script} test ended too quickly. CPU and Memory data will be not available.`);
+                    }
+                });
             } else {
                 killProcess(cp.childProcess);
                 cp.isTimedOut = true;
@@ -111,7 +111,7 @@ const interval = setInterval(() => {
         }
     });
 },
-2000);
+500);
 
 function handleExecFileResult (engineName, script, err, stdout, stderr, callback) {
     const process = processes.pop();
