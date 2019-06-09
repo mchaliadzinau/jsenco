@@ -95,9 +95,13 @@ const interval = setInterval(() => {
     processes.forEach(cp => {
         if ( checkIfProcessExists(cp.childProcess) ) {
             if(performance.now() - cp.startTime < TIMEOUT) {
-                pidusageTree(cp.childProcess.pid, function(err, stats) {
-                    pidUsageCallback(err, stats, cp);
-                });
+                try {
+                    pidusageTree(cp.childProcess.pid, function(err, stats) {
+                        pidUsageCallback(err, stats, cp);
+                    });
+                } catch (e) {
+                    console.warn(e);
+                }
             } else {
                 killProcess(cp.childProcess);
                 cp.isTimedOut = true;
@@ -109,13 +113,15 @@ const interval = setInterval(() => {
 
 function handleExecFileResult (engineName, script, err, stdout, stderr, callback) {
     const process = processes.pop();
+    const [cpus, mems] = [process.cpuVals, process.memVals];
     if(!err && checkIfProcessFinishedCorrectly(process.childProcess)) {
         ENGS[engineName].testsPassed.push({
             script,
             stdout: stdout.replace(/\n/g, ' '),
             stderr,
             status: 'success',
-            extime: performance.now() - process.startTime
+            extime: performance.now() - process.startTime,
+            cpus, mems,
         });
     } else {
         ENGS[engineName].testsFailed.push({
@@ -125,7 +131,8 @@ function handleExecFileResult (engineName, script, err, stdout, stderr, callback
             status: process.isTimedOut 
                 ? `timeout`
                 : `error ${process.childProcess.exitCode || process.childProcess.signalCode}`,
-            extime: performance.now() - process.startTime
+            extime: performance.now() - process.startTime,
+            cpus, mems,
         });    
     }
     if(ENGS[engineName].testsQueue.length == 0) {
@@ -146,7 +153,9 @@ function createProcess(engineName, script, callback) {
         script: path.basename(script),
         engine: engineName,
         childProcess,
-        startTime: performance.now()
+        startTime: performance.now(),
+        cpuVals: [],
+        memVals: [],
     }
 }
 
@@ -163,6 +172,8 @@ const pidUsageCallback = (err, stats, p) => {
     false && console.log(stats);
     const memOverhead = ENGS[p.engine].memOverhead
     const [cpu, mem] = processPidusageStats(stats, memOverhead)
+    p.cpuVals.push(cpu);
+    p.memVals.push(mem);
     if(ARGS[0] === 'debug') {
         console.log(p.script, '\t', cpu, '\t', mem );
     } else {
