@@ -64,7 +64,7 @@ const getOsDependantFullPath = path => ~process.platform.indexOf('win32') ? `${p
 const killProcess = process => {
     console.log('# killing ', process.pid)
     // process.kill();
-    kill(process.pid, err => err && console.err(err) );
+    kill(process.pid, err => err && console.error(err) );
 };
 
 module.exports = {

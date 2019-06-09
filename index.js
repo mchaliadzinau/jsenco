@@ -20,7 +20,7 @@ const {
 
 const ARGS = process.argv.slice(2);
 const PATH_TESTS = path.resolve(process.cwd(), 'tests');
-const TIMEOUT = 10000;
+const TIMEOUT = 60000;
 
 const tests = fs.readdirSync(PATH_TESTS, {withFileTypes: true})
     .filter(file => path.extname(file.name) === '.js')
@@ -60,7 +60,9 @@ const testEngines = engineNamesList => {
     for(let i = 0; i < list.length; i++) {
         const engineName = list[i];
         if (fs.existsSync(ENGS[engineName].path))
-            chain = chain.then( () => testEngine(list[i]) );
+            chain = chain.then( () => testEngine(list[i]) ).then(results => {
+                console.log(engineName, results);
+            });
     }
     chain.then(()=>{
         console.log(ENGS);
@@ -190,4 +192,4 @@ const pidUsageCallback = (err, stats, p) => {
     //
 };
 
-testEngines([V8]).then(()=> clearInterval(interval));
+testEngines([SM, V8]).then(()=> clearInterval(interval));
