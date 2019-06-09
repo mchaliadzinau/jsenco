@@ -20,4 +20,4 @@ BenchmarkSuite.RunSuites({ NotifyResult: PrintResult,
     NotifyError: PrintError,
     NotifyScore: PrintScore });
 
-print(COUNT);
+// print(COUNT);
