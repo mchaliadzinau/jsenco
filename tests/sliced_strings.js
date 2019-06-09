@@ -4,7 +4,7 @@
  * SOURCE: https://habr.com/ru/post/449368
  */
 
-  const COUNT = 1000000;
+  const COUNT = 1024 * 1024 * 10;
 
   function clearString(str) {
     return str.split('').join('');

@@ -1,6 +1,6 @@
 load('benchmark.js');
 
-const COUNT =  1024 * 1024;
+const COUNT =  1024 * 1024 * 10;
 var arrayNumbers = new BenchmarkSuite('ArrayNumbers', 100, [
     new Benchmark("Ones", () => {
         const a = [];
