@@ -15,7 +15,8 @@ const {
     processPidusageStats, 
     execDryRun,
     getOsDependantFullPath,
-    killProcess
+    killProcess,
+    parseTestOutput
 } = require('./utils');
 
 const ARGS = process.argv.slice(2);
@@ -105,7 +106,7 @@ const interval = setInterval(() => {
                     }
                 });
             } else {
-                killProcess(cp.childProcess);
+                killProcess(cp.childProcess, `${cp.script} timeout`);
                 cp.isTimedOut = true;
             }
         }
@@ -119,7 +120,7 @@ function handleExecFileResult (engineName, script, err, stdout, stderr, callback
     if(!err && checkIfProcessFinishedCorrectly(process.childProcess)) {
         ENGS[engineName].testsPassed.push({
             script,
-            stdout: stdout.replace(/\n/g, ' '),
+            stdout: parseTestOutput(engineName, script, stdout),
             stderr,
             status: 'success',
             extime: performance.now() - process.startTime,

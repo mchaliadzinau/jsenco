@@ -289,7 +289,7 @@ BenchmarkSuite.prototype.RunStep = function(runner) {
 var success = true;
 
 function PrintResult(name, result) {
-  print(name + ': ' + result);
+  // print(name + ': ' + result);
 }
 
 function PrintError(name, error) {
@@ -299,8 +299,11 @@ function PrintError(name, error) {
 
 function PrintScore(score) {
   if (success) {
-    print('----');
-    print('Score (version ' + BenchmarkSuite.version + '): ' + score);
+    print( JSON.stringify({
+        version: BenchmarkSuite.version,
+        score: score
+      })
+    );
   }
 }
 
