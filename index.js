@@ -66,7 +66,7 @@ const testEngines = engineNamesList => {
             });
     }
     chain.then(()=>{
-        console.log(ENGS);
+        console.log(JSON.stringify(ENGS));
     });
     return chain;
 } 
@@ -193,4 +193,4 @@ const pidUsageCallback = (err, stats, p) => {
     //
 };
 
-testEngines([SM, V8]).then(()=> clearInterval(interval));
+testEngines([SM, V8, JSC]).then(()=> clearInterval(interval));
