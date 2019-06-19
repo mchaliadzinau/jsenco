@@ -21,7 +21,7 @@ const {
 
 const ARGS = process.argv.slice(2);
 const PATH_TESTS = path.resolve(process.cwd(), 'tests');
-const TIMEOUT = 60000;
+const TIMEOUT = 120000;
 
 const tests = fs.readdirSync(PATH_TESTS, {withFileTypes: true})
     .filter(file => path.extname(file.name) === '.js')
@@ -168,8 +168,8 @@ const pidUsageCallback = (err, stats, p) => {
     } else if(err) {
         console.error(err);
         killProcess(p.childProcess);
-        const idx = cPs.findIndex(cp => cp.childProcess.pid === p.childProcess.pid);
-        cPs.splice(idx, 1);
+        const idx = processes.findIndex(cp => cp.childProcess.pid === p.childProcess.pid);
+        processes.splice(idx, 1);
         return;
     }
     false && console.log(stats);
