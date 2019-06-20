@@ -6,7 +6,7 @@ const kill = require('tree-kill');
 
 const TEST_DRYRUN = path.resolve(process.cwd(), 'core/tests/dryrun.js');
 const TEST_DRYLOOP = path.resolve(process.cwd(), 'core/tests/dryloop.js');
-
+const DRY_LOOP_MEM_CHECKS_COUNT = 4;
 
 const checkIfProcessExists = cp => !(cp.exitCode === 0 || cp.killed);
 
@@ -41,31 +41,52 @@ const execDryRun = (enginePath, forever) => {
         const script = forever ? TEST_DRYLOOP : TEST_DRYRUN;
         const dryRunProcess = execFile(enginePath, [script],{}, (err, stdout, stderr)=>{
             if(err || stderr) {
-                return reject({err, stderr});
+                return reject({err, stderr, enginePath, script});
+            }
+            if(!forever) { // if checking startup time
+                resolve(performance.now() - startTime);
             }
         });
-        dryRunProcess.on('connection', (a) => {
-            console.log(a);
-        })
+        // dryRunProcess.on('connection', (a) => {
+        //     console.log(a);
+        // })
         if(forever) {
-            pidusageTree(dryRunProcess.pid, function(err, stats) {
-                killProcess(dryRunProcess);
-                const [cpu, mem] = processPidusageStats(stats)
-                resolve(mem);
-            });
-        } else {
-            resolve(performance.now() - startTime);
+            let dryLoopMemoryValues = [];
+            dryLoopCheckInterval = setInterval(() => {
+                pidusageTree(dryRunProcess.pid, function(err, stats) {
+                    const [cpu, mem] = processPidusageStats(stats);
+                    if(dryLoopMemoryValues.length < DRY_LOOP_MEM_CHECKS_COUNT) {
+                        dryLoopMemoryValues.push(mem);
+                    } else {
+                        killProcess(dryRunProcess, path.basename(script));
+                        clearInterval(dryLoopCheckInterval);
+                        resolve(Math.max.apply(null, dryLoopMemoryValues));
+                    }
+                }).catch(err => {
+                    clearInterval(dryLoopCheckInterval);
+                    console.warn('#WARN: ', `${enginePath} dryrun ended too quickly. Memory data will include engine overhead.`);
+                });
+            }, 1000);
         }
     })
 }
 
 const getOsDependantFullPath = path => ~process.platform.indexOf('win32') ? `${path}.cmd` : path;
 
-const killProcess = process => {
-    console.log('# killing ', process.pid)
+const killProcess = (process, description) => {
+    console.log('# killing', process.pid, `(${description})`)
     // process.kill();
-    kill(process.pid, err => err && console.err(err) );
+    kill(process.pid, err => err && console.error(err) );
 };
+
+const parseTestOutput = (engineName, test, output) => {
+    try {
+        return JSON.parse(output);
+    } catch (e) {
+        console.warn('#WARN', engineName, test, 'output is not valid JSON.' );
+        return output.replace(/\n/g, ' ')
+    }
+}
 
 module.exports = {
     checkIfProcessExists,
@@ -74,5 +95,6 @@ module.exports = {
     processPidusageStats,
     execDryRun,
     getOsDependantFullPath,
-    killProcess
+    killProcess,
+    parseTestOutput
 }

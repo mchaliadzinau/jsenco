@@ -15,12 +15,16 @@ const {
     processPidusageStats, 
     execDryRun,
     getOsDependantFullPath,
-    killProcess
+    killProcess,
+    parseTestOutput
 } = require('./utils');
 
 const ARGS = process.argv.slice(2);
 const PATH_TESTS = path.resolve(process.cwd(), 'tests');
-const TIMEOUT = 10000;
+const TIMEOUT = 120000;
+
+const RESULTS_FOLDER = path.resolve(process.cwd(), 'results/data/');
+const RESULTS_LATEST = path.join(RESULTS_FOLDER, 'latest.json');
 
 const tests = fs.readdirSync(PATH_TESTS, {withFileTypes: true})
     .filter(file => path.extname(file.name) === '.js')
@@ -60,10 +64,15 @@ const testEngines = engineNamesList => {
     for(let i = 0; i < list.length; i++) {
         const engineName = list[i];
         if (fs.existsSync(ENGS[engineName].path))
-            chain = chain.then( () => testEngine(list[i]) );
+            chain = chain.then( () => testEngine(list[i]) ).then(results => {
+                console.log(engineName, results);
+            });
     }
     chain.then(()=>{
-        console.log(ENGS);
+        const json = JSON.stringify(ENGS);
+        console.log(json);
+        !fs.existsSync(RESULTS_FOLDER) && fs.mkdirSync(RESULTS_FOLDER);
+        fs.writeFileSync(RESULTS_LATEST, json);
     });
     return chain;
 } 
@@ -75,6 +84,12 @@ const testEngine = engineName => {
             ENGS[engineName].memOverhead = mem;
             return startEngineTests(engineName);
         })
+    }).catch(e => {
+        if(ENGS[engineName].testsPassed.length + ENGS[engineName].testsFailed.length === 0) {
+            const error = `Failed to execute tests on ${engineName}.`
+            ENGS[engineName].errors = [error]
+            console.warn('#WARN: ', error);
+        }
     });
 }
 
@@ -97,25 +112,37 @@ const interval = setInterval(() => {
             if(performance.now() - cp.startTime < TIMEOUT) {
                 pidusageTree(cp.childProcess.pid, function(err, stats) {
                     pidUsageCallback(err, stats, cp);
+                }).catch((e) => {
+                    if(cp.cpuVals.length + cp.memVals.length === 0) {
+                        console.warn('#WARN: ', `${cp.engine}:${cp.script} test ended too quickly. CPU and Memory data will be not available.`);
+                    }
                 });
             } else {
-                killProcess(cp.childProcess);
+                killProcess(cp.childProcess, `${cp.script} timeout`);
                 cp.isTimedOut = true;
             }
         }
     });
 },
-2000);
+500);
 
 function handleExecFileResult (engineName, script, err, stdout, stderr, callback) {
     const process = processes.pop();
+    const [cpus, mems] = [process.cpuVals, process.memVals];
     if(!err && checkIfProcessFinishedCorrectly(process.childProcess)) {
         ENGS[engineName].testsPassed.push({
             script,
-            stdout: stdout.replace(/\n/g, ' '),
+            stdout: parseTestOutput(engineName, script, stdout),
             stderr,
             status: 'success',
-            extime: performance.now() - process.startTime
+            extime: performance.now() - process.startTime,
+            stats: {
+                cpus, mems,
+                maxCPU: Math.max.apply(null, cpus),
+                minCPU: Math.min.apply(null, cpus),
+                maxMem: Math.max.apply(null, mems),
+                minMem: Math.min.apply(null, mems),
+            }
         });
     } else {
         ENGS[engineName].testsFailed.push({
@@ -125,7 +152,12 @@ function handleExecFileResult (engineName, script, err, stdout, stderr, callback
             status: process.isTimedOut 
                 ? `timeout`
                 : `error ${process.childProcess.exitCode || process.childProcess.signalCode}`,
-            extime: performance.now() - process.startTime
+            extime: performance.now() - process.startTime,
+            stats: {
+                cpus, mems,
+                maxCPU: Math.max.apply(null, cpus),
+                maxMem: Math.max.apply(null, mems),
+            }
         });    
     }
     if(ENGS[engineName].testsQueue.length == 0) {
@@ -146,7 +178,9 @@ function createProcess(engineName, script, callback) {
         script: path.basename(script),
         engine: engineName,
         childProcess,
-        startTime: performance.now()
+        startTime: performance.now(),
+        cpuVals: [],
+        memVals: [],
     }
 }
 
@@ -156,13 +190,15 @@ const pidUsageCallback = (err, stats, p) => {
     } else if(err) {
         console.error(err);
         killProcess(p.childProcess);
-        const idx = cPs.findIndex(cp => cp.childProcess.pid === p.childProcess.pid);
-        cPs.splice(idx, 1);
+        const idx = processes.findIndex(cp => cp.childProcess.pid === p.childProcess.pid);
+        processes.splice(idx, 1);
         return;
     }
     false && console.log(stats);
     const memOverhead = ENGS[p.engine].memOverhead
     const [cpu, mem] = processPidusageStats(stats, memOverhead)
+    p.cpuVals.push(cpu);
+    p.memVals.push(mem);
     if(ARGS[0] === 'debug') {
         console.log(p.script, '\t', cpu, '\t', mem );
     } else {
@@ -179,4 +215,4 @@ const pidUsageCallback = (err, stats, p) => {
     //
 };
 
-testEngines([V8]).then(()=> clearInterval(interval));
+testEngines([V8, SM]).then(()=> clearInterval(interval));
