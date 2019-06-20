@@ -22,7 +22,9 @@ const {
 const ARGS = process.argv.slice(2);
 const PATH_TESTS = path.resolve(process.cwd(), 'tests');
 const TIMEOUT = 120000;
-const FILE_RESULTS = path.resolve(process.cwd(), 'results/data/latest.json');
+
+const RESULTS_FOLDER = path.resolve(process.cwd(), 'results/data/');
+const RESULTS_LATEST = path.join(RESULTS_FOLDER, 'latest.json');
 
 const tests = fs.readdirSync(PATH_TESTS, {withFileTypes: true})
     .filter(file => path.extname(file.name) === '.js')
@@ -69,7 +71,8 @@ const testEngines = engineNamesList => {
     chain.then(()=>{
         const json = JSON.stringify(ENGS);
         console.log(json);
-        fs.writeFileSync(FILE_RESULTS, json);
+        !fs.existsSync(RESULTS_FOLDER) && fs.mkdirSync(RESULTS_FOLDER);
+        fs.writeFileSync(RESULTS_LATEST, json);
     });
     return chain;
 } 
@@ -81,6 +84,12 @@ const testEngine = engineName => {
             ENGS[engineName].memOverhead = mem;
             return startEngineTests(engineName);
         })
+    }).catch(e => {
+        if(ENGS[engineName].testsPassed.length + ENGS[engineName].testsFailed.length === 0) {
+            const error = `Failed to execute tests on ${engineName}.`
+            ENGS[engineName].errors = [error]
+            console.warn('#WARN: ', error);
+        }
     });
 }
 
@@ -206,4 +215,4 @@ const pidUsageCallback = (err, stats, p) => {
     //
 };
 
-testEngines([SM, V8, JSC]).then(()=> clearInterval(interval));
+testEngines([V8, SM]).then(()=> clearInterval(interval));
