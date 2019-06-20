@@ -21,7 +21,7 @@
   overflow-x: auto;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
 } 
 .chart.memory .col-wrapper {
   align-self: flex-end;
