@@ -124,7 +124,13 @@ function handleExecFileResult (engineName, script, err, stdout, stderr, callback
             stderr,
             status: 'success',
             extime: performance.now() - process.startTime,
-            cpus, mems,
+            stats: {
+                cpus, mems,
+                maxCPU: Math.max.apply(null, cpus),
+                minCPU: Math.min.apply(null, cpus),
+                maxMem: Math.max.apply(null, mems),
+                minMem: Math.min.apply(null, mems),
+            }
         });
     } else {
         ENGS[engineName].testsFailed.push({
@@ -135,7 +141,11 @@ function handleExecFileResult (engineName, script, err, stdout, stderr, callback
                 ? `timeout`
                 : `error ${process.childProcess.exitCode || process.childProcess.signalCode}`,
             extime: performance.now() - process.startTime,
-            cpus, mems,
+            stats: {
+                cpus, mems,
+                maxCPU: Math.max.apply(null, cpus),
+                maxMem: Math.max.apply(null, mems),
+            }
         });    
     }
     if(ENGS[engineName].testsQueue.length == 0) {
