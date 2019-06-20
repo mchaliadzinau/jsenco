@@ -6,7 +6,7 @@ const kill = require('tree-kill');
 
 const TEST_DRYRUN = path.resolve(process.cwd(), 'core/tests/dryrun.js');
 const TEST_DRYLOOP = path.resolve(process.cwd(), 'core/tests/dryloop.js');
-
+const DRY_LOOP_MEM_CHECKS_COUNT = 4;
 
 const checkIfProcessExists = cp => !(cp.exitCode === 0 || cp.killed);
 
@@ -41,22 +41,32 @@ const execDryRun = (enginePath, forever) => {
         const script = forever ? TEST_DRYLOOP : TEST_DRYRUN;
         const dryRunProcess = execFile(enginePath, [script],{}, (err, stdout, stderr)=>{
             if(err || stderr) {
-                return reject({err, stderr});
+                return reject({err, stderr, enginePath, script});
+            }
+            if(!forever) { // if checking startup time
+                resolve(performance.now() - startTime);
             }
         });
-        dryRunProcess.on('connection', (a) => {
-            console.log(a);
-        })
+        // dryRunProcess.on('connection', (a) => {
+        //     console.log(a);
+        // })
         if(forever) {
-            pidusageTree(dryRunProcess.pid, function(err, stats) {
-                killProcess(dryRunProcess, path.basename(script));
-                const [cpu, mem] = processPidusageStats(stats)
-                resolve(mem);
-            }).catch(err => {
-                console.warn('#WARN: ', `${enginePath} dryrun ended too quickly. Memory data will include engine overhead.`);
-            });
-        } else {
-            resolve(performance.now() - startTime);
+            let dryLoopMemoryValues = [];
+            dryLoopCheckInterval = setInterval(() => {
+                pidusageTree(dryRunProcess.pid, function(err, stats) {
+                    const [cpu, mem] = processPidusageStats(stats);
+                    if(dryLoopMemoryValues.length < DRY_LOOP_MEM_CHECKS_COUNT) {
+                        dryLoopMemoryValues.push(mem);
+                    } else {
+                        killProcess(dryRunProcess, path.basename(script));
+                        clearInterval(dryLoopCheckInterval);
+                        resolve(Math.max.apply(null, dryLoopMemoryValues));
+                    }
+                }).catch(err => {
+                    clearInterval(dryLoopCheckInterval);
+                    console.warn('#WARN: ', `${enginePath} dryrun ended too quickly. Memory data will include engine overhead.`);
+                });
+            }, 1000);
         }
     })
 }
