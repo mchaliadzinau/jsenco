@@ -22,6 +22,7 @@ const {
 const ARGS = process.argv.slice(2);
 const PATH_TESTS = path.resolve(process.cwd(), 'tests');
 const TIMEOUT = 120000;
+const FILE_RESULTS = path.resolve(process.cwd(), 'results/data/latest.json');
 
 const tests = fs.readdirSync(PATH_TESTS, {withFileTypes: true})
     .filter(file => path.extname(file.name) === '.js')
@@ -66,7 +67,9 @@ const testEngines = engineNamesList => {
             });
     }
     chain.then(()=>{
-        console.log(JSON.stringify(ENGS));
+        const json = JSON.stringify(ENGS);
+        console.log(json);
+        fs.writeFileSync(FILE_RESULTS, json);
     });
     return chain;
 } 
