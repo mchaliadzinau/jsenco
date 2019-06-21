@@ -6,6 +6,8 @@ const kill = require('tree-kill');
 
 const TEST_DRYRUN = path.resolve(process.cwd(), 'core/tests/dryrun.js');
 const TEST_DRYLOOP = path.resolve(process.cwd(), 'core/tests/dryloop.js');
+const TEST_DRYRUN_BENCHMARK = path.resolve(process.cwd(), 'core/tests/dryrun.benchmark.js');
+const TEST_DRYLOOP_BENCHMARK = path.resolve(process.cwd(), 'core/tests/dryloop.benchmark.js');
 const DRY_LOOP_MEM_CHECKS_COUNT = 4;
 
 const checkIfProcessExists = cp => !(cp.exitCode === 0 || cp.killed);
@@ -34,23 +36,31 @@ const processPidusageStats = (stats, memOverhead = 0) => {
     return [ Math.round(s.cpu), Math.round( s.mem / 1024 / 1024 - memOverhead) ]
 }
 
-const execDryRun = (enginePath, forever) => {
+const getDryScriptName = (isLoop, isBenchmark) => {
+    if(isBenchmark) {
+        return isLoop ? TEST_DRYLOOP_BENCHMARK : TEST_DRYRUN_BENCHMARK;
+    } else {
+        return isLoop ? TEST_DRYLOOP : TEST_DRYRUN;
+    }
+};
+
+const execDryRun = (enginePath, isLoop, isBenchmark) => {
     return new Promise((resolve,reject) => {
         const startTime = performance.now();
 
-        const script = forever ? TEST_DRYLOOP : TEST_DRYRUN;
+        const script = getDryScriptName(isLoop, isBenchmark);
         const dryRunProcess = execFile(enginePath, [script],{}, (err, stdout, stderr)=>{
             if(err || stderr) {
                 return reject({err, stderr, enginePath, script});
             }
-            if(!forever) { // if checking startup time
+            if(!isLoop) { // if checking startup time
                 resolve(performance.now() - startTime);
             }
         });
         // dryRunProcess.on('connection', (a) => {
         //     console.log(a);
         // })
-        if(forever) {
+        if(isLoop) {
             let dryLoopMemoryValues = [];
             dryLoopCheckInterval = setInterval(() => {
                 pidusageTree(dryRunProcess.pid, function(err, stats) {

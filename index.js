@@ -78,11 +78,17 @@ const testEngines = engineNamesList => {
 } 
 
 const testEngine = engineName => {
-    return execDryRun(ENGS[engineName].path, false).then(time => {
-        ENGS[engineName].timeOverhead = time;
-        return execDryRun(ENGS[engineName].path, true).then(mem => {
-            ENGS[engineName].memOverhead = mem;
-            return startEngineTests(engineName);
+    return execDryRun(ENGS[engineName].path, false, false).then(timeOverhead => {
+        ENGS[engineName].timeOverhead = timeOverhead;
+        return execDryRun(ENGS[engineName].path, true, false).then(memOverhead => {
+            ENGS[engineName].memOverhead = memOverhead;
+            return execDryRun(ENGS[engineName].path, false, true).then(becnhmarkTimeOverhead => {
+                ENGS[engineName].becnhmarkTimeOverhead = becnhmarkTimeOverhead;
+                return execDryRun(ENGS[engineName].path, true, true).then(becnhmarkMemOverhead => {
+                    ENGS[engineName].becnhmarkMemOverhead = becnhmarkMemOverhead;
+                    return startEngineTests(engineName);
+                });
+            });
         })
     }).catch(e => {
         if(ENGS[engineName].testsPassed.length + ENGS[engineName].testsFailed.length === 0) {
@@ -195,8 +201,8 @@ const pidUsageCallback = (err, stats, p) => {
         return;
     }
     false && console.log(stats);
-    const memOverhead = ENGS[p.engine].memOverhead
-    const [cpu, mem] = processPidusageStats(stats, memOverhead)
+    // const memOverhead = ENGS[p.engine].memOverhead
+    const [cpu, mem] = processPidusageStats(stats); // processPidusageStats(stats, memOverhead);
     p.cpuVals.push(cpu);
     p.memVals.push(mem);
     if(ARGS[0] === 'debug') {
