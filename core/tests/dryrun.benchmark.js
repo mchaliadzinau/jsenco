@@ -5,7 +5,3 @@ new BenchmarkSuite('Dry Run', 100, [
         // do nothing
     })
 ]);
-
-BenchmarkSuite.RunSuites({ NotifyResult: PrintResult,
-    NotifyError: PrintError,
-    NotifyScore: PrintScore });

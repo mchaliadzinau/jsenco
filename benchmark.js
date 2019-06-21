@@ -68,6 +68,12 @@ function BenchmarkSuite(name, reference, benchmarks) {
   this.reference = reference;
   this.benchmarks = benchmarks;
   BenchmarkSuite.suites.push(this);
+
+  BenchmarkSuite.RunSuites({ 
+    NotifyResult: PrintResult,
+    NotifyError: PrintError,
+    NotifyScore: PrintScore 
+  });
 }
 
 
@@ -126,7 +132,7 @@ BenchmarkSuite.RunSuites = function(runner) {
     if (runner.NotifyScore) {
       var score = BenchmarkSuite.GeometricMean(BenchmarkSuite.scores);
       var formatted = BenchmarkSuite.FormatScore(100 * score);
-      runner.NotifyScore(formatted);
+      runner.NotifyScore(formatted, this.results);
     }
   }
   RunStep();
@@ -297,16 +303,13 @@ function PrintError(name, error) {
   success = false;
 }
 
-function PrintScore(score) {
+function PrintScore(score, timings) {
   if (success) {
     print( JSON.stringify({
         version: BenchmarkSuite.version,
-        score: score
+        score,
+        timings,
       })
     );
   }
 }
-
-// BenchmarkSuite.RunSuites({ NotifyResult: PrintResult,
-//   NotifyError: PrintError,
-//   NotifyScore: PrintScore });

@@ -5,7 +5,3 @@ new BenchmarkSuite('Dry Loop', 100, [
         while(1){}
     })
 ]);
-
-BenchmarkSuite.RunSuites({ NotifyResult: PrintResult,
-    NotifyError: PrintError,
-    NotifyScore: PrintScore });

@@ -152,7 +152,7 @@ NBodySystem.prototype.energy = function(){
     return e;
 }
 
-let arrayNumbers = new BenchmarkSuite('N-Body', 100, [
+new BenchmarkSuite('N-Body', 100, [
     new Benchmark("N-Body", () => {
         let ret;
         for ( let n = 3; n <= 6; n *= 2 ) {
@@ -169,7 +169,3 @@ let arrayNumbers = new BenchmarkSuite('N-Body', 100, [
         }
     })
 ]);
-
-BenchmarkSuite.RunSuites({ NotifyResult: PrintResult,
-    NotifyError: PrintError,
-    NotifyScore: PrintScore });
