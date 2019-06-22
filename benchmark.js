@@ -114,6 +114,7 @@ BenchmarkSuite.RunSuites = function(runner) {
   var suites = BenchmarkSuite.suites;
   var length = suites.length;
   BenchmarkSuite.scores = [];
+  BenchmarkSuite.timings = [];
   var index = 0;
   function RunStep() {
     while (continuation || index < length) {
@@ -132,7 +133,7 @@ BenchmarkSuite.RunSuites = function(runner) {
     if (runner.NotifyScore) {
       var score = BenchmarkSuite.GeometricMean(BenchmarkSuite.scores);
       var formatted = BenchmarkSuite.FormatScore(100 * score);
-      runner.NotifyScore(formatted, this.results);
+      runner.NotifyScore(formatted, BenchmarkSuite.timings);
     }
   }
   RunStep();
@@ -185,6 +186,7 @@ BenchmarkSuite.prototype.NotifyResult = function() {
   var mean = BenchmarkSuite.GeometricMean(this.results);
   var score = this.reference / mean;
   BenchmarkSuite.scores.push(score);
+  BenchmarkSuite.timings = this.results
   if (this.runner.NotifyResult) {
     var formatted = BenchmarkSuite.FormatScore(100 * score);
     this.runner.NotifyResult(this.name, formatted);
