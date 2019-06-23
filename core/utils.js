@@ -9,6 +9,7 @@ const TEST_DRYLOOP = path.resolve(process.cwd(), 'core/tests/dryloop.js');
 const TEST_DRYRUN_BENCHMARK = path.resolve(process.cwd(), 'core/tests/dryrun.benchmark.js');
 const TEST_DRYLOOP_BENCHMARK = path.resolve(process.cwd(), 'core/tests/dryloop.benchmark.js');
 const DRY_LOOP_MEM_CHECKS_COUNT = 4;
+const DRY_MON_INTERWAL = 1000;
 
 const checkIfProcessExists = cp => !(cp.exitCode === 0 || cp.killed);
 
@@ -64,6 +65,7 @@ const execDryRun = (enginePath, isLoop, isBenchmark) => {
             let dryLoopMemoryValues = [];
             dryLoopCheckInterval = setInterval(() => {
                 pidusageTree(dryRunProcess.pid, function(err, stats) {
+                    if(err) reject(`#ERR\t${script}\t${err}`);
                     const [cpu, mem] = processPidusageStats(stats);
                     if(dryLoopMemoryValues.length < DRY_LOOP_MEM_CHECKS_COUNT) {
                         dryLoopMemoryValues.push(mem);
@@ -76,7 +78,7 @@ const execDryRun = (enginePath, isLoop, isBenchmark) => {
                     clearInterval(dryLoopCheckInterval);
                     console.warn('#WARN: ', `${enginePath} dryrun ended too quickly. Memory data will include engine overhead.`);
                 });
-            }, 1000);
+            }, DRY_MON_INTERWAL);
         }
     })
 }

@@ -104,7 +104,7 @@ function handleExecFileResult (engine, script, err, stdout, stderr, callback) {
     }
 }
 
-function startProcessesMonitoring(TIMEOUT) {
+function startProcessesMonitoring(TIMEOUT, INTERVAL = 500) {
     return setInterval(() => {
         PROCESSES.forEach(cp => {
             if ( checkIfProcessExists(cp.childProcess) ) {
@@ -123,7 +123,7 @@ function startProcessesMonitoring(TIMEOUT) {
             }
         });
     },
-    500);
+    INTERVAL);
 }
 
 module.exports = {
