@@ -8,12 +8,11 @@ fetch(URL_RESULTS)
       if(response.ok) {
         response.json().then(json => {
           
-          const ENGINES_LIST = json.list;
-          ENGINES_LIST.forEach(engineName => {
-            if(json[engineName]) {
-              const results = json[engineName];
-              results.testsPassed.forEach( (result, idx) => {
-                const memoryChartSelector = AddChartBlock(result.stdout.score, engineName, result.script, true, idx, 'memory', `min: ${Math.min.apply(null, result.stats.mems)} Mb, max: ${result.stats.maxMem} Mb`)
+          const ENGINES_LIST = json;
+          ENGINES_LIST.forEach(engine => {
+            if(engine) {
+              engine.testsPassed.forEach( (result, idx) => {
+                const memoryChartSelector = AddChartBlock(result.stdout.score, engine.name, result.script, true, idx, 'memory', `min: ${Math.min.apply(null, result.stats.mems)} Mb, max: ${result.stats.maxMem} Mb`)
                 CreateMemoryChart(memoryChartSelector, result.stats.mems);
               })
             }
