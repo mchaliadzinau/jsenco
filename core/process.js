@@ -1,6 +1,6 @@
 const ARGS = process.argv.slice(2);
 const path = require('path');
-const { execFile }  = require('child_process');
+const { spawn }  = require('child_process');
 const pidusageTree = require('pidusage-tree');
 const { performance } = require('perf_hooks');
 const {
@@ -15,11 +15,12 @@ const {
 const PROCESSES = [];
 
 function createProcess(engine, script, callback) {
-    const childProcess = execFile(
+    let stdout = '';
+    let stderr = '';
+    const childProcess = spawn(
         engine.path, 
         [script], 
         {}, 
-        (err, stdout, stderr) => handleExecFileResult(engine, script, err, stdout, stderr, callback)
     );
     PROCESSES.push({
         script: path.basename(script),
@@ -28,7 +29,26 @@ function createProcess(engine, script, callback) {
         startTime: performance.now(),
         cpuVals: [],
         memVals: [],
-    })
+    });
+
+    childProcess.stdout.on('data', (data) => {
+        stdout += data;
+    });
+    childProcess.stderr.on('data', (data) => {
+        stderr += data;
+    });
+    childProcess.on('close', (code) => {
+        if (code !== 0) {
+            handleExecFileResult(engine, script, code, stdout, stderr, callback);
+        } else {
+            handleExecFileResult(engine, script, null, stdout, stderr, callback);
+        }
+    });
+    childProcess.on('error', (err) => {
+        if(err) {
+            handleExecFileResult(engine, script, err, stdout, stderr, callback);
+        }
+    });
 }
 
 const pidUsageCallback = (err, stats, p) => {
