@@ -62,8 +62,8 @@ const execDryRun = (enginePath, isLoop, isBenchmark) => {
         //     console.log(a);
         // })
         if(isLoop) {
-            let dryLoopMemoryValues = [];
-            dryLoopCheckInterval = setInterval(() => {
+            const dryLoopMemoryValues = [];
+            const dryLoopCheckInterval = setInterval(() => {
                 pidusageTree(dryRunProcess.pid, function(err, stats) {
                     if(err) reject(`#ERR\t${script}\t${err}`);
                     const [cpu, mem] = processPidusageStats(stats);

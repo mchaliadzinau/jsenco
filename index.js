@@ -13,10 +13,12 @@ const PATH_TESTS = path.resolve(process.cwd(), 'tests');
 const RESULTS_FOLDER = path.resolve(process.cwd(), 'results/data/');
 const RESULTS_LATEST = path.join(RESULTS_FOLDER, 'latest.json');
 
+/** @type {string[]} */
 const tests = fs.readdirSync(PATH_TESTS, {withFileTypes: true})
     .filter(file => path.extname(file.name) === '.js')
     .map(file=> path.resolve(PATH_TESTS,file.name) );
 
+/** @type {EnTest.EnginesSetup} */
 const ENGS = getEnginesSetup(tests);
 
 runTests([

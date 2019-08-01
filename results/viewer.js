@@ -50,7 +50,7 @@ function AddChartBlock(score, engineName, testName, isTestPassed, testIdx, chart
 
 function CreateMemoryChart(selector, data) {
   const max = Math.max.apply(null, data);
-  d3.select(selector)
+  window['d3'].select(selector)
   .selectAll("div")
   .data(data)
     .enter()

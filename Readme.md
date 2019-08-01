@@ -5,3 +5,6 @@
   * http://dromaeo.com/
   * http://wiki.mozilla.org/Dromaeo
   * https://github.com/jeresig/dromaeo/tree/master/tests
+
+# JSDoc and TSDoc
+  * https://medium.com/@trukrs/type-safe-javascript-with-jsdoc-7a2a63209b76

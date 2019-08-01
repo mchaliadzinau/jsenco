@@ -1,0 +1,21 @@
+{
+    "compilerOptions": {
+        "target": "es2015",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "allowJs": true,
+        "checkJs": true,
+        "noEmit": true
+    },
+    "include": [
+        "./**/*.js",
+        "./index.d.ts",
+        "./node_modules/@types/node/index.d.ts"
+    ],
+    "exclude": [
+        "./benchmark.js",
+        "core/tests",
+        "node_modules",
+        "tests",
+    ]
+}

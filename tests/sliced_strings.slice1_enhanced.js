@@ -1,3 +1,4 @@
+// @ts-nocheck
 load('benchmark.js');
 load('tests/modules/sliced_strings.setup.js')
 

@@ -12,6 +12,9 @@ const {
     parseTestOutput
 } = require('./utils');
 
+/**
+ * @type {EnTest.Process[]}
+ */
 const PROCESSES = [];
 
 function createProcess(engine, script, callback) {
@@ -29,6 +32,7 @@ function createProcess(engine, script, callback) {
         startTime: performance.now(),
         cpuVals: [],
         memVals: [],
+        isTimedOut: false
     });
 
     childProcess.stdout.on('data', (data) => {
@@ -39,14 +43,14 @@ function createProcess(engine, script, callback) {
     });
     childProcess.on('close', (code) => {
         if (code !== 0) {
-            handleExecFileResult(engine, script, code, stdout, stderr, callback);
+            handleExecFileResult(engine, script, code.toString(), stdout, stderr, callback);
         } else {
             handleExecFileResult(engine, script, null, stdout, stderr, callback);
         }
     });
     childProcess.on('error', (err) => {
         if(err) {
-            handleExecFileResult(engine, script, err, stdout, stderr, callback);
+            handleExecFileResult(engine, script, err.toString(), stdout, stderr, callback);
         }
     });
 }
@@ -82,7 +86,15 @@ const pidUsageCallback = (err, stats, p) => {
     //
 };
 
-
+/**
+ * 
+ * @param {EnTest.EngineInfo} engine 
+ * @param {string} script 
+ * @param {string} err 
+ * @param {string} stdout 
+ * @param {string} stderr 
+ * @param {Function} callback 
+ */
 function handleExecFileResult (engine, script, err, stdout, stderr, callback) {
     const process = PROCESSES.pop();
     const [cpus, mems] = [process.cpuVals, process.memVals];
@@ -108,12 +120,14 @@ function handleExecFileResult (engine, script, err, stdout, stderr, callback) {
             stderr,
             status: process.isTimedOut 
                 ? `timeout`
-                : `error ${process.childProcess.exitCode || process.childProcess.signalCode}`,
+                : `error ${process.childProcess['exitCode'] || process.childProcess['signalCode']}`,
             extime: performance.now() - process.startTime,
             stats: {
                 cpus, mems,
                 maxCPU: Math.max.apply(null, cpus),
+                minCPU: Math.min.apply(null, cpus),
                 maxMem: Math.max.apply(null, mems),
+                minMem: Math.min.apply(null, mems),
             }
         });    
     }
