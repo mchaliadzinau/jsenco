@@ -5,7 +5,6 @@ const {createProcess, startProcessesMonitoring} = require('./process');
 const {execDryRun} = require('./utils');
 
 const testEngines = (enginesList, RESULTS_LATEST) => {
-    // process.platform.indexOf('win') === 0 && console.log('\t Results may be not accurate on ', process.platform)
     /** @type {Promise} */ 
     let chain = Promise.resolve(1);
     for(let i = 0; i < enginesList.length; i++) {

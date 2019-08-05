@@ -1,3 +1,4 @@
+// @ts-nocheck
 load('benchmark.js');
 
 new BenchmarkSuite('Dry Loop', 100, [

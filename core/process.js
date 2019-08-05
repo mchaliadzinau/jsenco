@@ -66,8 +66,7 @@ const pidUsageCallback = (err, stats, p) => {
         return;
     }
     false && console.log(stats);
-    // const memOverhead = ENGS[p.engine].memOverhead
-    const [cpu, mem] = processPidusageStats(stats); // processPidusageStats(stats, memOverhead);
+    const [cpu, mem] = processPidusageStats(stats);
     p.cpuVals.push(cpu);
     p.memVals.push(mem);
     if(ARGS[0] === 'debug') {
@@ -75,15 +74,6 @@ const pidUsageCallback = (err, stats, p) => {
     } else {
         printOSL(`${p.script}\t${cpu}\t${mem}`);
     }
-    // => {
-    //   cpu: 10.0,            // percentage (from 0 to 100*vcore)
-    //   memory: 357306368,    // bytes
-    //   ppid: 312,            // PPID
-    //   pid: 727,             // PID
-    //   ctime: 867000,        // ms user + system time
-    //   elapsed: 6650000,     // ms since the start of the process
-    //   timestamp: 864000000  // ms since epoch
-    //
 };
 
 /**
