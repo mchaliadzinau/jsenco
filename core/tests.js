@@ -59,6 +59,11 @@ const startEngineTests = engine => (
 
 module.exports = {
     runTests: (enginesList, options) => {
+        enginesList.forEach(engine => {
+            if( !fs.existsSync(engine.path) ) {
+                throw new Error(`Cannot access ${engine.name}. Please, check if it is installed via JSVU.`);
+            }
+        });
         if(!options) return console.error('#ERR runTests(): No options were provided.')
         const interval = startProcessesMonitoring(options.TIMEOUT);
         return testEngines(enginesList, options.RESULTS_LATEST).then(()=> clearInterval(interval))
