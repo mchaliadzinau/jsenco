@@ -41,16 +41,26 @@ function createProcess(engine, script, callback) {
     childProcess.stderr.on('data', (data) => {
         stderr += data;
     });
-    childProcess.on('close', (code) => {
+    // https://nodejs.org/api/child_process.html#child_process_event_close
+    childProcess.on('close', (code, signal) => { // If the process exited, code is the final exit code of the process, otherwise null. If the process terminated due to receipt of a signal, signal is the string name of the signal, otherwise null. One of the two will always be non-null.
         if (code !== 0) {
-            handleExecFileResult(engine, script, code.toString(), stdout, stderr, callback);
+            const processEndResult = {
+                code: code ? code : null,
+                signal
+            };
+            handleExecFileResult(engine, script, processEndResult, stdout, stderr, callback);
         } else {
             handleExecFileResult(engine, script, null, stdout, stderr, callback);
         }
     });
+    // https://nodejs.org/api/child_process.html#child_process_event_error
     childProcess.on('error', (err) => {
         if(err) {
-            handleExecFileResult(engine, script, err.toString(), stdout, stderr, callback);
+            const processEndResult = {
+                code: null,
+                error: err
+            };
+            handleExecFileResult(engine, script, processEndResult, stdout, stderr, callback);
         }
     });
 }
@@ -80,7 +90,7 @@ const pidUsageCallback = (err, stats, p) => {
  * 
  * @param {EnTest.EngineInfo} engine 
  * @param {string} script 
- * @param {string} err 
+ * @param {EnTest.ProcessEndResult} err 
  * @param {string} stdout 
  * @param {string} stderr 
  * @param {Function} callback 

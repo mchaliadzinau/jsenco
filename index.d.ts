@@ -44,4 +44,10 @@ export interface Process {
     isTimedOut? : boolean
 }
 
+export interface ProcessEndResult {
+    code: number | null,
+    signal?: string,
+    error?: Error
+}
+
 export as namespace EnTest;
