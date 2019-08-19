@@ -17,6 +17,12 @@ const {
  */
 const PROCESSES = [];
 
+/**
+ * @param {EnTest.EngineInfo} engine
+ * @param {string} script
+ * @param {function} callback
+ * @return {EnTest.Process} Process
+ */
 function createProcess(engine, script, callback) {
     let stdout = '';
     let stderr = '';
@@ -25,7 +31,7 @@ function createProcess(engine, script, callback) {
         [script], 
         {}, 
     );
-    PROCESSES.push({
+    const process = {
         script: path.basename(script),
         engine: engine.name,
         childProcess,
@@ -33,7 +39,9 @@ function createProcess(engine, script, callback) {
         cpuVals: [],
         memVals: [],
         isTimedOut: false
-    });
+    };
+
+    PROCESSES.push(process);
 
     childProcess.stdout.on('data', (data) => {
         stdout += data;
@@ -63,6 +71,8 @@ function createProcess(engine, script, callback) {
             handleExecFileResult(engine, script, processEndResult, stdout, stderr, callback);
         }
     });
+
+    return process;
 }
 
 const pidUsageCallback = (err, stats, p) => {

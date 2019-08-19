@@ -23,7 +23,10 @@ export interface EngineInfo {
     path: string,
     testsQueue: string[],
     testsPassed: TestResult[],
-    testsFailed: TestResult[]
+    testsFailed: TestResult[],
+    becnhmarkTimeOverhead?: number,
+    becnhmarkMemOverhead?: number,
+    errors?: any[],
 }
 
 export interface EnginesSetup {
@@ -48,6 +51,12 @@ export interface ProcessEndResult {
     code: number | null,
     signal?: string,
     error?: Error
+}
+
+export interface RunTestsOptions {
+    TIMEOUT: number,
+    RESULTS_FOLDER: string,
+    RESULTS_LATEST: string,
 }
 
 export as namespace EnTest;

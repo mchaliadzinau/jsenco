@@ -8,7 +8,7 @@ const JSVU_SM = '.jsvu/sm'
 const JSVU_CHAKRA = '.jsvu/chakra'
 /**
  * @param {string[]} tests
- * @return {EnTest.EnginesSetup} name getEnginesSetup.
+ * @return {EnTest.EnginesSetup} EnginesSetup.
  */
 const getEnginesSetup = tests => ({
     list: [V8, JSC, SM, CHAKRA],

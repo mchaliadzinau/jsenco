@@ -45,6 +45,12 @@ const getDryScriptName = (isLoop, isBenchmark) => {
     }
 };
 
+/**
+ * @param {string} enginePath
+ * @param {boolean} isLoop
+ * @param {boolean} isBenchmark
+ * @return {Promise}
+ */
 const execDryRun = (enginePath, isLoop, isBenchmark) => {
     return new Promise((resolve,reject) => {
         const startTime = performance.now();

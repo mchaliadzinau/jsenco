@@ -24,6 +24,10 @@ const testEngines = (enginesList, RESULTS_LATEST) => {
     return chain;
 } 
 
+/**
+ * @param {EnTest.EngineInfo} engine
+ * @return {Promise}
+ */
 const testEngine = engine => {
     return execDryRun(engine.path, false, false).then(timeOverhead => {
         engine.timeOverhead = timeOverhead;
@@ -46,6 +50,10 @@ const testEngine = engine => {
     });
 }
 
+/**
+ * @param {EnTest.EngineInfo} engine
+ * @return {Promise}
+ */
 const startEngineTests = engine => (
     new Promise( (resolve, reject) => {
         const test = engine.testsQueue.pop();
@@ -57,15 +65,24 @@ const startEngineTests = engine => (
     })
 );
 
-module.exports = {
-    runTests: (enginesList, options) => {
-        enginesList.forEach(engine => {
-            if( !fs.existsSync(engine.path) ) {
-                throw new Error(`Cannot access ${engine.name}. Please, check if it is installed via JSVU.`);
-            }
-        });
-        if(!options) return console.error('#ERR runTests(): No options were provided.')
-        const interval = startProcessesMonitoring(options.TIMEOUT);
-        return testEngines(enginesList, options.RESULTS_LATEST).then(()=> clearInterval(interval))
+/**
+ * @param {EnTest.EngineInfo[]} enginesList
+ * @param {EnTest.RunTestsOptions} options
+ * @return {Promise}
+ */
+const runTests = (enginesList, options) => {
+    enginesList.forEach(engine => {
+        if( !fs.existsSync(engine.path) ) {
+            throw new Error(`Cannot access ${engine.name}. Please, check if it is installed via JSVU.`);
+        }
+    });
+    if(!options) {
+        console.error('#ERR runTests(): No options were provided.');
+        process.exit();
     }
+    const interval = startProcessesMonitoring(options.TIMEOUT);
+    return testEngines(enginesList, options.RESULTS_LATEST).then(()=> clearInterval(interval))
+}
+module.exports = {
+    runTests
 }
