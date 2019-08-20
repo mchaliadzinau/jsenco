@@ -4,6 +4,12 @@ const fs = require('fs');
 const {createProcess, startProcessesMonitoring} = require('./process');
 const {execDryRun} = require('./utils');
 
+
+/** Initializes engines testing
+ * @param {EnTest.EngineInfo[]} enginesList
+ * @param {string} RESULTS_LATEST - path to file to store last tests run result
+ * @return {Promise} - promise chain
+ */
 const testEngines = (enginesList, RESULTS_LATEST) => {
     /** @type {Promise} */ 
     let chain = Promise.resolve(1);
@@ -24,7 +30,7 @@ const testEngines = (enginesList, RESULTS_LATEST) => {
     return chain;
 } 
 
-/**
+/** Initializes testing of a particular engine
  * @param {EnTest.EngineInfo} engine
  * @return {Promise}
  */
@@ -50,7 +56,7 @@ const testEngine = engine => {
     });
 }
 
-/**
+/** Creates test processes for a particular engine
  * @param {EnTest.EngineInfo} engine
  * @return {Promise}
  */

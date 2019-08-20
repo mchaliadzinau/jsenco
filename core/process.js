@@ -17,7 +17,7 @@ const {
  */
 const PROCESSES = [];
 
-/**
+/** Creates test process for particular Engine
  * @param {EnTest.EngineInfo} engine
  * @param {string} script
  * @param {function} callback
@@ -29,7 +29,7 @@ function createProcess(engine, script, callback) {
     const childProcess = spawn(
         engine.path, 
         [script], 
-        {}, 
+        {},             // options
     );
     const process = {
         script: path.basename(script),
@@ -75,12 +75,18 @@ function createProcess(engine, script, callback) {
     return process;
 }
 
+/** Handle `pidusageTree` callback 
+ * @param {string | Error} err
+ * @param {EnTest.ProcessStats[]} stats
+ * @return {EnTest.Process} p
+ */
+
 const pidUsageCallback = (err, stats, p) => {
     if( !checkIfProcessExists(p.childProcess) ) {
         return;
     } else if(err) {
         console.error(err);
-        killProcess(p.childProcess);
+        killProcess(p.childProcess, 'error');
         const idx = PROCESSES.findIndex(cp => cp.childProcess.pid === p.childProcess.pid);
         PROCESSES.splice(idx, 1);
         return;
@@ -96,14 +102,13 @@ const pidUsageCallback = (err, stats, p) => {
     }
 };
 
-/**
- * 
+/** Handles results of test process execution
  * @param {EnTest.EngineInfo} engine 
- * @param {string} script 
- * @param {EnTest.ProcessEndResult} err 
- * @param {string} stdout 
- * @param {string} stderr 
- * @param {Function} callback 
+ * @param {string} script - test script path
+ * @param {EnTest.ProcessEndResult | null} err - error if process was ended with an error
+ * @param {string} stdout - test process normal output
+ * @param {string} stderr - test process errors output
+ * @param {Function} callback - callback which should be called after test process end
  */
 function handleExecFileResult (engine, script, err, stdout, stderr, callback) {
     const process = PROCESSES.pop();
@@ -148,6 +153,11 @@ function handleExecFileResult (engine, script, err, stdout, stderr, callback) {
     }
 }
 
+/** Starts Processes Monitoring
+ * @param {number} TIMEOUT 
+ * @param {number} INTERVAL = 500 
+ * @return {NodeJS.Timeout} intervalId 
+ */
 function startProcessesMonitoring(TIMEOUT, INTERVAL = 500) {
     return setInterval(() => {
         PROCESSES.forEach(cp => {

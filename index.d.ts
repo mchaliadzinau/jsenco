@@ -47,6 +47,16 @@ export interface Process {
     isTimedOut? : boolean
 }
 
+export interface ProcessStats {
+    cpu: number,        // percentage (from 0 to 100*vcore)
+    memory: number,     // bytes
+    ppid: number,       // PPID
+    pid: number,        // PID
+    ctime: number,      // ms user + system time
+    elapsed: number,    // ms since the start of the process
+    timestamp: number   // ms since epoch
+}
+
 export interface ProcessEndResult {
     code: number | null,
     signal?: string,
