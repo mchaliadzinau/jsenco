@@ -8,7 +8,8 @@
             "type": "node",
             "request": "launch",
             "name": "parse.test.js",
-            "program": "${workspaceFolder}/parse.test.js",
+            "program": "${workspaceFolder}/core/parsing.js",
+            "cwd": "${workspaceFolder}",
             "runtimeVersion": "11.9.0",
         },
         {
