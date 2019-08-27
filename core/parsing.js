@@ -1,32 +1,53 @@
 const PATH = require('path');
 const FS = require('fs');
 const ACORN = require("acorn");
+const { generate } = require('astring');
+
 // const { generate } = require('astring');
 
 const ERR_SUITE_NOT_ALLOWED = "Multiple BenchmarkSuites are not allowed!";
 const ERR_SUITE_NOT_FOUND = "BenchmarkSuite is not found!";
 
 const PATH_TESTS = PATH.resolve(process.cwd(), 'tests');
+const PATH_TEST_CHAMBER = PATH.resolve(process.cwd(), 'test_chamber');
+
 /** @type {string[]} */
 const tests = FS.readdirSync(PATH_TESTS, {withFileTypes: true})
     .filter(file => PATH.extname(file.name) === '.js')
     .map(file=> PATH.resolve(PATH_TESTS,file.name) );
 
-tests.forEach(test=> {
+const suits = tests.map(test=> {
     const ast = ACORN.parse(FS.readFileSync(test).toString(), {});
-    const BenchmarkSuiteDeclarationAST = findBenchmarkSuiteDeclaration(ast);
-    if(BenchmarkSuiteDeclarationAST.length === 1) {
-        const BenchmarkSuite = getBenchmarkSuite(BenchmarkSuiteDeclarationAST[0]);
-        const benchmarks = getBenchmarks(BenchmarkSuite);
-        console.log(benchmarks);
-        
-    } else {
-        throw new Error(BenchmarkSuiteDeclarationAST.length > 1 
-            ? ERR_SUITE_NOT_ALLOWED
-            : ERR_SUITE_NOT_FOUND
-        );
-    }
+
+    const BenchmarkSuiteAST = findBenchmarkSuiteDeclaration(ast);
+    const index = ast.body.indexOf(BenchmarkSuiteAST);
+
+    const BenchmarkSuite = getBenchmarkSuite(BenchmarkSuiteAST);
+    const benchmarks = getBenchmarks(BenchmarkSuite);
+
+    const testFileName = PATH.basename(test,'.js');
+    return benchmarks.map(benchmark => {
+        const name = benchmark.name.toLowerCase().replace(/[^A-Za-z0-9]*/g, '');
+        const astCopy = Object.assign({},ast); 
+
+        astCopy.body = ast.body.slice(0, index)
+            .concat(benchmark.functionAST.body)
+            .concat(ast.body.slice(index+1, ast.body.length));
+
+        benchmark.functionAST;
+        return {
+            name: `${testFileName}.${name}.js`,
+            code: generate(astCopy),
+            source: testFileName
+        }
+    });
 });
+
+suits.forEach(suit=> {
+    suit.forEach(benchmark=> {
+        FS.writeFileSync(PATH.resolve(PATH_TEST_CHAMBER, benchmark.name), benchmark.code);
+    });
+})
 
 // BenchmarkSuite 
 function findVariableDeclaratorOfBenchmarkSuite(variableDeclarationAST) {
@@ -42,7 +63,7 @@ function findVariableDeclaratorOfBenchmarkSuite(variableDeclarationAST) {
 }
 
 function findBenchmarkSuiteDeclaration(ast) {
-    return ast.body.filter(entry => (
+    const BenchmarkSuiteDeclarationAST = ast.body.filter(entry => (
             entry.type === "ExpressionStatement"
             && entry.expression.type === "NewExpression"
             && entry.expression.callee.type === "Identifier"
@@ -52,6 +73,15 @@ function findBenchmarkSuiteDeclaration(ast) {
             && findVariableDeclaratorOfBenchmarkSuite(entry)
         )
     );
+
+    if(BenchmarkSuiteDeclarationAST.length === 1) {
+        return BenchmarkSuiteDeclarationAST[0];
+    } else {
+        throw new Error(BenchmarkSuiteDeclarationAST.length > 1 
+            ? ERR_SUITE_NOT_ALLOWED
+            : ERR_SUITE_NOT_FOUND
+        );
+    }
 }
 
 function getBenchmarkSuite(ast) {
