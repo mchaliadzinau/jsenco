@@ -21,7 +21,7 @@ tests.forEach(test=> {
         console.log(benchmarks);
         
     } else {
-        console.error(BenchmarkSuiteDeclarationAST.length > 1 
+        throw new Error(BenchmarkSuiteDeclarationAST.length > 1 
             ? ERR_SUITE_NOT_ALLOWED
             : ERR_SUITE_NOT_FOUND
         );
@@ -87,13 +87,13 @@ function getBenchmarks(suite) {
     }
     return suite.benchmarks.elements.map((entry, idx) => {
         if(entry.type !== "NewExpression" || entry.callee.name !== "Benchmark") {
-            throw new Error("Third argument of BenchmarkSuite should only contain array of Benchmark instances");
+            throw new Error("Third parameter of BenchmarkSuite should only contain array of Benchmark instances");
         }
         if(entry.arguments[0].type !== "Literal" || !entry.arguments[0].value) {
             throw new Error(`Benchmark №${idx} should have name.`);
         }
         if(["FunctionExpression", "ArrowFunctionExpression"].indexOf(entry.arguments[1].type) === -1) {
-            throw new Error(`Benchmark №${idx} should have name.`);
+            throw new Error(`Benchmark №${idx} should have function as second parameter.`);
         }
         return {
             name: entry.arguments[0].value,
