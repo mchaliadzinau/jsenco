@@ -1,0 +1,103 @@
+const PATH = require('path');
+const FS = require('fs');
+const ACORN = require("acorn");
+// const { generate } = require('astring');
+
+const ERR_SUITE_NOT_ALLOWED = "Multiple BenchmarkSuites are not allowed!";
+const ERR_SUITE_NOT_FOUND = "BenchmarkSuite is not found!";
+
+const PATH_TESTS = PATH.resolve(process.cwd(), 'tests');
+/** @type {string[]} */
+const tests = FS.readdirSync(PATH_TESTS, {withFileTypes: true})
+    .filter(file => PATH.extname(file.name) === '.js')
+    .map(file=> PATH.resolve(PATH_TESTS,file.name) );
+
+tests.forEach(test=> {
+    const ast = ACORN.parse(FS.readFileSync(test).toString(), {});
+    const BenchmarkSuiteDeclarationAST = findBenchmarkSuiteDeclaration(ast);
+    if(BenchmarkSuiteDeclarationAST.length === 1) {
+        const BenchmarkSuite = getBenchmarkSuite(BenchmarkSuiteDeclarationAST[0]);
+        const benchmarks = getBenchmarks(BenchmarkSuite);
+        console.log(benchmarks);
+        
+    } else {
+        console.error(BenchmarkSuiteDeclarationAST.length > 1 
+            ? ERR_SUITE_NOT_ALLOWED
+            : ERR_SUITE_NOT_FOUND
+        );
+    }
+});
+
+// BenchmarkSuite 
+function findVariableDeclaratorOfBenchmarkSuite(variableDeclarationAST) {
+    if(variableDeclarationAST.type !== "VariableDeclaration") {
+        throw new Error("INTERNAL ERROR: expected VariableDeclaration");
+    }
+    return variableDeclarationAST.declarations.find(declaration => (
+        declaration.type === "VariableDeclarator"
+        && declaration.init.type === "NewExpression"
+        && declaration.init.callee.type === "Identifier"
+        && declaration.init.callee.name === "BenchmarkSuite"
+    ));
+}
+
+function findBenchmarkSuiteDeclaration(ast) {
+    return ast.body.filter(entry => (
+            entry.type === "ExpressionStatement"
+            && entry.expression.type === "NewExpression"
+            && entry.expression.callee.type === "Identifier"
+            && entry.expression.callee.name === "BenchmarkSuite"
+        ) || (
+            entry.type === "VariableDeclaration"
+            && findVariableDeclaratorOfBenchmarkSuite(entry)
+        )
+    );
+}
+
+function getBenchmarkSuite(ast) {
+    let arguments = undefined;
+    if(ast.type === "ExpressionStatement") {
+        arguments = ast.expression.arguments;
+    } else if(ast.type === "VariableDeclaration") {
+        arguments = findVariableDeclaratorOfBenchmarkSuite(ast).init.arguments;
+    } else {
+        throw new Error("BenchmarkSuite is not found!")
+    }
+    return {
+        name: arguments[0], 
+        reference: arguments[1], 
+        benchmarks: arguments[2]
+    };
+
+}
+
+function transformBenchmarkSuite(ast) {
+    return ast;
+}
+
+// Benchmark
+/**
+ * Process BenchmarkSuite AST arguments containing benchmarks
+ * @param {*} suite 
+ */
+function getBenchmarks(suite) {
+    if(suite.benchmarks.type !== "ArrayExpression") {
+        throw new Error("Third argument of BenchmarkSuite should be array.")
+
+    }
+    return suite.benchmarks.elements.map((entry, idx) => {
+        if(entry.type !== "NewExpression" || entry.callee.name !== "Benchmark") {
+            throw new Error("Third argument of BenchmarkSuite should only contain array of Benchmark instances");
+        }
+        if(entry.arguments[0].type !== "Literal" || !entry.arguments[0].value) {
+            throw new Error(`Benchmark №${idx} should have name.`);
+        }
+        if(["FunctionExpression", "ArrowFunctionExpression"].indexOf(entry.arguments[1].type) === -1) {
+            throw new Error(`Benchmark №${idx} should have name.`);
+        }
+        return {
+            name: entry.arguments[0].value,
+            functionAST:  entry.arguments[1]
+        }
+    })
+}

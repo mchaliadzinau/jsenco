@@ -12,6 +12,8 @@
   "author": "Mikalai Chaliadzinau",
   "license": "MIT",
   "dependencies": {
+    "acorn": "^7.0.0",
+    "astring": "^1.4.1",
     "pidusage-tree": "^2.0.5",
     "tree-kill": "^1.2.1"
   }
