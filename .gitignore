@@ -1,2 +1,4 @@
-node_modules
-results/data
+node_modules/
+results/data/
+npm-debug.log
+test_chamber/

@@ -1,7 +1,8 @@
+// @ts-nocheck
 load('benchmark.js');
 
 const COUNT =  1024 * 1024 * 10;
-var arrayNumbers = new BenchmarkSuite('ArrayNumbers', 100, [
+new BenchmarkSuite('ArrayNumbers', 100, [
     new Benchmark("Ones", () => {
         const a = [];
         for (var i=0; i < COUNT ; i++) {
@@ -15,9 +16,3 @@ var arrayNumbers = new BenchmarkSuite('ArrayNumbers', 100, [
         }
     })
 ]);
-
-BenchmarkSuite.RunSuites({ NotifyResult: PrintResult,
-    NotifyError: PrintError,
-    NotifyScore: PrintScore });
-
-// print(COUNT);

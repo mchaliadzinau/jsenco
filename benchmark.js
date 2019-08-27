@@ -1,3 +1,4 @@
+// @ts-nocheck
 // Copyright 2012 the V8 project authors. All rights reserved.
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -68,6 +69,12 @@ function BenchmarkSuite(name, reference, benchmarks) {
   this.reference = reference;
   this.benchmarks = benchmarks;
   BenchmarkSuite.suites.push(this);
+
+  BenchmarkSuite.RunSuites({ 
+    NotifyResult: PrintResult,
+    NotifyError: PrintError,
+    NotifyScore: PrintScore 
+  });
 }
 
 
@@ -108,6 +115,7 @@ BenchmarkSuite.RunSuites = function(runner) {
   var suites = BenchmarkSuite.suites;
   var length = suites.length;
   BenchmarkSuite.scores = [];
+  BenchmarkSuite.timings = [];
   var index = 0;
   function RunStep() {
     while (continuation || index < length) {
@@ -126,7 +134,7 @@ BenchmarkSuite.RunSuites = function(runner) {
     if (runner.NotifyScore) {
       var score = BenchmarkSuite.GeometricMean(BenchmarkSuite.scores);
       var formatted = BenchmarkSuite.FormatScore(100 * score);
-      runner.NotifyScore(formatted);
+      runner.NotifyScore(formatted, BenchmarkSuite.timings);
     }
   }
   RunStep();
@@ -179,6 +187,7 @@ BenchmarkSuite.prototype.NotifyResult = function() {
   var mean = BenchmarkSuite.GeometricMean(this.results);
   var score = this.reference / mean;
   BenchmarkSuite.scores.push(score);
+  BenchmarkSuite.timings = this.results
   if (this.runner.NotifyResult) {
     var formatted = BenchmarkSuite.FormatScore(100 * score);
     this.runner.NotifyResult(this.name, formatted);
@@ -297,16 +306,13 @@ function PrintError(name, error) {
   success = false;
 }
 
-function PrintScore(score) {
+function PrintScore(score, timings) {
   if (success) {
     print( JSON.stringify({
         version: BenchmarkSuite.version,
-        score: score
+        score,
+        timings,
       })
     );
   }
 }
-
-// BenchmarkSuite.RunSuites({ NotifyResult: PrintResult,
-//   NotifyError: PrintError,
-//   NotifyScore: PrintScore });
