@@ -1,3 +1,4 @@
+const FS = require('fs');
 const { execFile }  = require('child_process');
 const path = require('path');
 const { performance } = require('perf_hooks');
@@ -130,6 +131,13 @@ const parseTestOutput = (engineName, test, output) => {
     }
 }
 
+const cleanupTestChamber = (directory) => {
+    const files = FS.readdirSync(directory);
+    for (const file of files) {
+        FS.unlinkSync(path.join(directory, file));
+    }
+}
+
 module.exports = {
     checkIfProcessExists,
     checkIfProcessFinishedCorrectly,
@@ -138,5 +146,6 @@ module.exports = {
     execDryRun,
     getOsDependantFullPath,
     killProcess,
-    parseTestOutput
+    parseTestOutput,
+    cleanupTestChamber
 }

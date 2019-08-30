@@ -3,6 +3,8 @@ const FS = require('fs');
 const ACORN = require("acorn");
 const { generate } = require('astring');
 
+const {cleanupTestChamber} = require('./utils');
+
 const ERR_SUITE_NOT_ALLOWED = "Multiple BenchmarkSuites are not allowed!";
 const ERR_SUITE_NOT_FOUND = "BenchmarkSuite is not found!";
 
@@ -42,7 +44,6 @@ suits.forEach(suit=> {
     suit.forEach(benchmark=> {
         FS.writeFileSync(PATH.resolve(PATH_TEST_CHAMBER, benchmark.name + '.js'), benchmark.testCode);
         FS.writeFileSync(PATH.resolve(PATH_TEST_CHAMBER, benchmark.name + '.becnhmark.js'), benchmark.benchmarkCode);
-
     });
 })
 
@@ -145,13 +146,6 @@ function getBenchmarks(suite) {
             benchmarkAST: entry
         }
     })
-}
-
-function cleanupTestChamber(directory) {
-    const files = FS.readdirSync(directory);
-    for (const file of files) {
-        FS.unlinkSync(PATH.join(directory, file));
-    }
 }
 
 /**
