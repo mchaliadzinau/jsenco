@@ -7,7 +7,7 @@
     "start": "node index.js",
     "view": "http-server results",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "tsc": " node_modules/.bin/tsc --allowJs --checkJs --noEmit --target ES2015 --moduleResolution node -d -w index.js index.d.ts"
+    "tsc": "./node_modules/.bin/tsc --allowJs --checkJs --noEmit --target ES2015 --moduleResolution node -d -w index.js index.d.ts"
   },
   "author": "Mikalai Chaliadzinau",
   "license": "MIT",
@@ -16,5 +16,9 @@
     "astring": "^1.4.1",
     "pidusage-tree": "^2.0.5",
     "tree-kill": "^1.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^12.7.3",
+    "typescript": "^3.6.2"
   }
 }
