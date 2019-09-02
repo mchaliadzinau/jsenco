@@ -16,5 +16,9 @@
     "astring": "^1.4.1",
     "pidusage-tree": "^2.0.5",
     "tree-kill": "^1.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^12.7.3",
+    "typescript": "^3.6.2"
   }
 }
