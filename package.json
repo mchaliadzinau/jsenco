@@ -7,7 +7,7 @@
     "start": "node index.js",
     "view": "http-server results",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "tsc": " node_modules/.bin/tsc --allowJs --checkJs --noEmit --target ES2015 --moduleResolution node -d -w index.js index.d.ts"
+    "tsc": "./node_modules/.bin/tsc --allowJs --checkJs --noEmit --target ES2015 --moduleResolution node -d -w index.js index.d.ts"
   },
   "author": "Mikalai Chaliadzinau",
   "license": "MIT",
