@@ -8,44 +8,55 @@ const {cleanupTestChamber} = require('./utils');
 const ERR_SUITE_NOT_ALLOWED = "Multiple BenchmarkSuites are not allowed!";
 const ERR_SUITE_NOT_FOUND = "BenchmarkSuite is not found!";
 
-const PATH_TESTS = PATH.resolve(process.cwd(), 'tests');
 const PATH_TEST_CHAMBER = PATH.resolve(process.cwd(), 'test_chamber');
 
-/** @type {string[]} */
-const tests = FS.readdirSync(PATH_TESTS, {withFileTypes: true})
-    .filter(file => PATH.extname(file.name) === '.js')
-    .map(file=> PATH.resolve(PATH_TESTS,file.name) );
-
-cleanupTestChamber(PATH_TEST_CHAMBER);
-const suits = tests.map(test=> {
-    /** @type {AST.Node} */
-    const ast = ACORN.parse(FS.readFileSync(test).toString(), {});
-
-    const declarationAST = findBenchmarkSuiteDeclaration(ast);
-    const index = ast.body.indexOf(declarationAST);
-
-    const suite = getBenchmarkSuite(declarationAST);
-    const benchmarks = getBenchmarks(suite);
-
-    const testFileName = PATH.basename(test,'.js');
-    return benchmarks.map(benchmark => {
-        const name = benchmark.name.toLowerCase().replace(/ /g, '_').replace(/[^A-Za-z0-9_]*/g, '');
-
+function parseTests(tests) {  
+    cleanupTestChamber(PATH_TEST_CHAMBER);
+    const suits = tests.map(test=> {
+        /** @type {AST.Node} */
+        const ast = transformBenchmarkSuite( ACORN.parse(FS.readFileSync(test).toString(), {}) );
+    
+        const declarationAST = findBenchmarkSuiteDeclaration(ast);
+        const index = ast.body.indexOf(declarationAST);
+    
+        const suite = getBenchmarkSuite(declarationAST);
+        const benchmarks = getBenchmarks(suite);
+    
+        const testFileName = PATH.basename(test,'.js');
         return {
-            name: `${testFileName}.${name}`,
-            testCode: generate( createTestProgramAST(ast, index, benchmark) ),
-            benchmarkCode: generate( createBenchmarkProgramAST(ast, index, suite, benchmark) ),
-            sourceFile: testFileName
-        }
+            name: suite.name.value,
+            benchmarks: benchmarks.map(benchmark => {
+                const name = benchmark.name.toLowerCase().replace(/ /g, '_').replace(/[^A-Za-z0-9_]*/g, '');
+    
+                return {
+                    name: `${testFileName}.${name}`,
+                    testCode: generate( createTestProgramAST(ast, index, benchmark) ),
+                    benchmarkCode: generate( createBenchmarkProgramAST(ast, index, suite, benchmark) ),
+                    sourceFile: testFileName
+                }
+            })
+        };
     });
-});
+    
+    return suits.map(suit=> {
+        return {
+            name: suit.name,
+            benchmarks: suit.benchmarks.map(benchmark=> {
+                const plainTestPath = PATH.resolve(PATH_TEST_CHAMBER, benchmark.name + '.js');
+                const benchmarkTestPath = PATH.resolve(PATH_TEST_CHAMBER, benchmark.name + '.becnhmark.js');
 
-suits.forEach(suit=> {
-    suit.forEach(benchmark=> {
-        FS.writeFileSync(PATH.resolve(PATH_TEST_CHAMBER, benchmark.name + '.js'), benchmark.testCode);
-        FS.writeFileSync(PATH.resolve(PATH_TEST_CHAMBER, benchmark.name + '.becnhmark.js'), benchmark.benchmarkCode);
+                FS.writeFileSync(plainTestPath, benchmark.testCode);
+                FS.writeFileSync(benchmarkTestPath, benchmark.benchmarkCode);
+
+                return {
+                    name: benchmark.name,
+                    plainTestPath,
+                    benchmarkTestPath
+                }
+            })
+        };
     });
-})
+}
 
 // BenchmarkSuite 
 /**
@@ -179,3 +190,5 @@ function createBenchmarkProgramAST(source, index, benchmarkSuite, benchmark) {
         .concat(source.body.slice(index+1, source.body.length));
     return ast;
 }
+
+module.exports = parseTests;

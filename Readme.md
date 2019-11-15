@@ -17,3 +17,4 @@
 
 ## JSDoc and TSDoc
   * https://medium.com/@trukrs/type-safe-javascript-with-jsdoc-7a2a63209b76
+  * [JSDoc: Tag Types](https://jsdoc.app/tags-type.html)

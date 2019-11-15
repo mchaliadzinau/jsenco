@@ -63,6 +63,22 @@ const testEngine = engine => {
 const startEngineTests = engine => (
     new Promise( (resolve, reject) => {
         const test = engine.testsQueue.pop();
+/**
+ * 1) we should wait until certain STDOUT value
+ * 2) new test format: 
+ */
+/** {
+    "name":"StringsConcat",
+    "benchmarks":[
+        {
+            "name":"strings_concat.strings",
+            "plainTestPath":"/Users/ws-032-31b/Projects/SRCs/rv4-js-eng-opt-comparator/test_chamber/strings_concat.strings.js",
+            "benchmarkTestPath":"/Users/ws-032-31b/Projects/SRCs/rv4-js-eng-opt-comparator/test_chamber/strings_concat.strings.becnhmark.js"
+        }
+    ]
+} */
+
+
         createProcess( 
             engine, 
             test,

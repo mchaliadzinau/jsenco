@@ -6,7 +6,8 @@ const path = require('path');
 const fs = require('fs');
 
 const {getEnginesSetup} = require('./core/engines');
-const {runTests} = require('./core/tests')
+const {runTests} = require('./core/tests');
+const parseTests = require('./core/parsing');
 
 // const ARGS = process.argv.slice(2);
 const PATH_TESTS = path.resolve(process.cwd(), 'tests');
@@ -19,7 +20,7 @@ const tests = fs.readdirSync(PATH_TESTS, {withFileTypes: true})
     .map(file=> path.resolve(PATH_TESTS,file.name) );
 
 /** @type {EnTest.EnginesSetup} */
-const ENGS = getEnginesSetup(tests);
+const ENGS = getEnginesSetup( parseTests(tests) );
 
 runTests([
     ENGS.V8, 
