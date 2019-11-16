@@ -120,14 +120,17 @@ const killProcess = (process, description) => {
  * @param {string} engineName - name of the engine running the test
  * @param {string} test - test name
  * @param {string} output - test process stdout
- * @return {string} text
+ * @return {array} text
  */
 const parseTestOutput = (engineName, test, output) => {
     try {
-        return JSON.parse(output);
+        return output.replace(/\r/g,'')
+            .split('\n')
+            .filter(e => !!e)
+            .map(e => JSON.parse(e));
     } catch (e) {
         console.warn('#WARN', engineName, test, 'output is not valid JSON.' );
-        return output.replace(/\n/g, ' ')
+        return [output.replace(/\n/g, ' ')]
     }
 }
 

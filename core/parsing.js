@@ -178,6 +178,8 @@ function createTestProgramAST(source, index, benchmark) {
         && entry.expression.arguments.find(argument => argument.type === "Literal" && argument.value === "benchmark.js");
     });
     testProgramAST.body.splice( testProgramAST.body.indexOf(loadBenchmarkJsAST) , 1); // Get rid of "load('benchmark.js');"
+
+    testProgramAST.body.push( createFinalTestMarkAST('{"END_MARK": "RAW_TEST_END"}') )
     return testProgramAST;
 }
 
@@ -188,7 +190,29 @@ function createBenchmarkProgramAST(source, index, benchmarkSuite, benchmark) {
     ast.body = source.body.slice(0, index)
         .concat(suiteClone)
         .concat(source.body.slice(index+1, source.body.length));
+
+    ast.body.push( createFinalTestMarkAST('{"END_MARK": "BENCHMARK_TEST_END"}') )
     return ast;
+}
+
+function createFinalTestMarkAST(markValue) {
+    return {
+        "type": "ExpressionStatement",
+        "expression": {
+            "type": "CallExpression",
+            "callee": {
+                "type": "Identifier",
+                "name": "print"
+            },
+            "arguments": [
+                {
+                    "type": "Literal",
+                    "value": `${markValue}`,
+                    "raw": `'${markValue}'`
+                }
+            ]
+        }
+    };
 }
 
 module.exports = parseTests;

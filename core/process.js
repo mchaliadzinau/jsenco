@@ -20,10 +20,9 @@ const PROCESSES = [];
 /** Creates test process for particular Engine
  * @param {EnTest.EngineInfo} engine
  * @param {string} script
- * @param {function} callback
  * @return {EnTest.Process} Process
  */
-function createProcess(engine, script, callback) {
+async function createProcess(engine, script) {
     let stdout = '';
     let stderr = '';
     const childProcess = spawn(
@@ -38,41 +37,49 @@ function createProcess(engine, script, callback) {
         startTime: performance.now(),
         cpuVals: [],
         memVals: [],
-        isTimedOut: false
+        isTimedOut: false,
+        finishedAt: null
     };
 
     PROCESSES.push(process);
 
     childProcess.stdout.on('data', (data) => {
+        const output = parseTestOutput(engine.name, script, data.toString());
+        if(output.find(e=>!!e['END_MARK'])) {
+            process.finishedAt = performance.now();
+        }
         stdout += data;
     });
     childProcess.stderr.on('data', (data) => {
         stderr += data;
     });
-    // https://nodejs.org/api/child_process.html#child_process_event_close
-    childProcess.on('close', (code, signal) => { // If the process exited, code is the final exit code of the process, otherwise null. If the process terminated due to receipt of a signal, signal is the string name of the signal, otherwise null. One of the two will always be non-null.
-        if (code !== 0) {
-            const processEndResult = {
-                code: code ? code : null,
-                signal
-            };
-            handleExecFileResult(engine, script, processEndResult, stdout, stderr, callback);
-        } else {
-            handleExecFileResult(engine, script, null, stdout, stderr, callback);
-        }
-    });
-    // https://nodejs.org/api/child_process.html#child_process_event_error
-    childProcess.on('error', (err) => {
-        if(err) {
-            const processEndResult = {
-                code: null,
-                error: err
-            };
-            handleExecFileResult(engine, script, processEndResult, stdout, stderr, callback);
-        }
-    });
+    return new Promise((resolve, reject) => {
+        // https://nodejs.org/api/child_process.html#child_process_event_close
+        childProcess.on('close', (code, signal) => { // If the process exited, code is the final exit code of the process, otherwise null. If the process terminated due to receipt of a signal, signal is the string name of the signal, otherwise null. One of the two will always be non-null.
+            if (code !== 0) {
+                const processEndResult = {
+                    code: code ? code : null,
+                    signal
+                };
+                handleExecFileResult(engine, script, processEndResult, stdout, stderr);
+            } else {
+                handleExecFileResult(engine, script, null, stdout, stderr);
+            }
+            resolve(engine);
+        });
+        // https://nodejs.org/api/child_process.html#child_process_event_error
+        childProcess.on('error', (err) => {
+            if(err) {
+                const processEndResult = {
+                    code: null,
+                    error: err
+                };
+                handleExecFileResult(engine, script, processEndResult, stdout, stderr);
+            }
+            resolve(engine);
+        });
+    })
 
-    return process;
 }
 
 /** Handle `pidusageTree` callback 
@@ -108,9 +115,8 @@ const pidUsageCallback = (err, stats, p) => {
  * @param {EnTest.ProcessEndResult | null} err - error if process was ended with an error
  * @param {string} stdout - test process normal output
  * @param {string} stderr - test process errors output
- * @param {Function} callback - callback which should be called after test process end
  */
-function handleExecFileResult (engine, script, err, stdout, stderr, callback) {
+function handleExecFileResult (engine, script, err, stdout, stderr) {
     const process = PROCESSES.pop();
     const [cpus, mems] = [process.cpuVals, process.memVals];
     if(!err && checkIfProcessFinishedCorrectly(process.childProcess)) {
@@ -119,7 +125,7 @@ function handleExecFileResult (engine, script, err, stdout, stderr, callback) {
             stdout: parseTestOutput(engine.name, script, stdout),
             stderr,
             status: 'success',
-            extime: performance.now() - process.startTime,
+            extime: process.finishedAt ? process.finishedAt : performance.now() - process.startTime,
             stats: {
                 cpus, mems,
                 maxCPU: Math.max.apply(null, cpus),
@@ -146,11 +152,6 @@ function handleExecFileResult (engine, script, err, stdout, stderr, callback) {
             }
         });    
     }
-    if(engine.testsQueue.length == 0) {
-        callback(engine);
-    } else {
-        createProcess(engine, engine.testsQueue.pop(), callback);
-    }
 }
 
 /** Starts Processes Monitoring
@@ -161,7 +162,7 @@ function handleExecFileResult (engine, script, err, stdout, stderr, callback) {
 function startProcessesMonitoring(TIMEOUT, INTERVAL = 500) {
     return setInterval(() => {
         PROCESSES.forEach(cp => {
-            if ( checkIfProcessExists(cp.childProcess) ) {
+            if ( checkIfProcessExists(cp.childProcess) && !cp.finishedAt ) {
                 if(performance.now() - cp.startTime < TIMEOUT) {
                     pidusageTree(cp.childProcess.pid, function(err, stats) {
                         pidUsageCallback(err, stats, cp);

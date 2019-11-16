@@ -60,32 +60,16 @@ const testEngine = engine => {
  * @param {EnTest.EngineInfo} engine
  * @return {Promise}
  */
-const startEngineTests = engine => (
-    new Promise( (resolve, reject) => {
+const startEngineTests = async engine => {
+    
+    while(engine.testsQueue.length > 0) {
         const test = engine.testsQueue.pop();
-/**
- * 1) we should wait until certain STDOUT value
- * 2) new test format: 
- */
-/** {
-    "name":"StringsConcat",
-    "benchmarks":[
-        {
-            "name":"strings_concat.strings",
-            "plainTestPath":"/Users/ws-032-31b/Projects/SRCs/rv4-js-eng-opt-comparator/test_chamber/strings_concat.strings.js",
-            "benchmarkTestPath":"/Users/ws-032-31b/Projects/SRCs/rv4-js-eng-opt-comparator/test_chamber/strings_concat.strings.becnhmark.js"
-        }
-    ]
-} */
+        await createProcess(engine, test.plainTestPath);
+        await createProcess(engine, test.benchmarkTestPath);
+    }
 
-
-        createProcess( 
-            engine, 
-            test,
-            resolve
-        )
-    })
-);
+    return Promise.resolve(engine);
+};
 
 /**
  * @param {EnTest.EngineInfo[]} enginesList
