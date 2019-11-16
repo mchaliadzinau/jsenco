@@ -179,7 +179,9 @@ function createTestProgramAST(source, index, benchmark) {
     });
     testProgramAST.body.splice( testProgramAST.body.indexOf(loadBenchmarkJsAST) , 1); // Get rid of "load('benchmark.js');"
 
-    testProgramAST.body.push( createFinalTestMarkAST('{"END_MARK": "RAW_TEST_END"}') )
+    testProgramAST.body.push( createFinalTestMarkAST('{"END_MARK": "RAW_TEST_END"}') );
+    testProgramAST.body.push( createEndlessLoopAST() );
+
     return testProgramAST;
 }
 
@@ -191,7 +193,9 @@ function createBenchmarkProgramAST(source, index, benchmarkSuite, benchmark) {
         .concat(suiteClone)
         .concat(source.body.slice(index+1, source.body.length));
 
-    ast.body.push( createFinalTestMarkAST('{"END_MARK": "BENCHMARK_TEST_END"}') )
+    ast.body.push( createFinalTestMarkAST('{"END_MARK": "BENCHMARK_TEST_END"}') );
+    ast.body.push( createEndlessLoopAST() );
+
     return ast;
 }
 
@@ -213,6 +217,21 @@ function createFinalTestMarkAST(markValue) {
             ]
         }
     };
+}
+
+function createEndlessLoopAST() {
+    return     {
+        "type": "WhileStatement",
+        "test": {
+          "type": "Literal",
+          "value": true,
+          "raw": "true"
+        },
+        "body": {
+          "type": "BlockStatement",
+          "body": []
+        }
+      }
 }
 
 module.exports = parseTests;

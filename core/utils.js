@@ -14,7 +14,7 @@ const DRY_MON_INTERWAL = 1000;
 
 const checkIfProcessExists = cp => !(cp.exitCode === 0 || cp.killed);
 
-const checkIfProcessFinishedCorrectly = cp => (cp.exitCode === 0 || !cp.killed);
+const checkIfProcessFinishedCorrectly = process => ( !!process.finishedAt || process.childProcess.exitCode === 0 || !process.childProcess.killed );
 
 /**
  * Print on Same Line (restricted to 80 chars line)
