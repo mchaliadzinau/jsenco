@@ -188,7 +188,7 @@ function createTestProgramAST(source, index, benchmark) {
 function createBenchmarkProgramAST(source, index, benchmarkSuite, benchmark) {
     const ast = JSON.parse( JSON.stringify(source) );
     const suiteClone = JSON.parse( JSON.stringify(benchmarkSuite.ast) );
-    Object.assign(suiteClone, {arguments: [ suiteClone.arguments[0], suiteClone.arguments[1], benchmark.benchmarkAST ]})
+    Object.assign(suiteClone, {arguments: [ suiteClone.arguments[0], suiteClone.arguments[1], createArrayAST(benchmark.benchmarkAST) ]})
     ast.body = source.body.slice(0, index)
         .concat(suiteClone)
         .concat(source.body.slice(index+1, source.body.length));
@@ -197,6 +197,13 @@ function createBenchmarkProgramAST(source, index, benchmarkSuite, benchmark) {
     ast.body.push( createEndlessLoopAST() );
 
     return ast;
+}
+
+function createArrayAST(...elements){
+    return {
+        "type": "ArrayExpression",
+        "elements": elements
+    }
 }
 
 function createFinalTestMarkAST(markValue) {
