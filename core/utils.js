@@ -87,7 +87,7 @@ const execDryRun = (enginePath, isLoop, isBenchmark) => {
                     if(dryLoopMemoryValues.length < DRY_LOOP_MEM_CHECKS_COUNT) {
                         dryLoopMemoryValues.push(mem);
                     } else {
-                        killProcess(dryRunProcess, path.basename(script));
+                        killProcess({childProcess:dryRunProcess}, path.basename(script));
                         clearInterval(dryLoopCheckInterval);
                         resolve(Math.max.apply(null, dryLoopMemoryValues));
                     }
@@ -111,9 +111,10 @@ const getOsDependantFullPath = path => ~process.platform.indexOf('win32') ? `${p
  * @return {void}
  */
 const killProcess = (process, description) => {
-    console.log('# killing', process.pid, `(${description})`)
+    console.log('# killing', process.childProcess.pid, `(${description})`)
     // process.kill();
-    kill(process.pid, err => err && console.error(err) );
+    process.isKilled = true;
+    kill(process.childProcess.pid, err => err && console.error(err) );
 };
 
 /** Parses successful test process output
