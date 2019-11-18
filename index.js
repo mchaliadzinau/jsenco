@@ -26,7 +26,7 @@ runTests([
     ENGS.V8, 
     ENGS.SM
 ], {
-    TIMEOUT: 120000,
+    TIMEOUT: 240000,
     RESULTS_FOLDER,
     RESULTS_LATEST,
 });
