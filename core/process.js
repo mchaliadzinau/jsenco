@@ -131,9 +131,10 @@ function handleExecFileResult (engine, script, err, stdout, stderr) {
     const process = PROCESSES.pop();
     const [cpus, mems] = [process.cpuVals, process.memVals];
     if(!err && checkIfProcessFinishedCorrectly(process)) {
+        const parsedOutput = parseTestOutput(engine.name, script, stdout);
         engine.testsPassed.push({
             script,
-            stdout: parseTestOutput(engine.name, script, stdout),
+            stdout: parsedOutput.find(entry => entry.score && entry.version),
             stderr,
             status: 'success',
             extime: (process.finishedAt ? process.finishedAt : performance.now() ) - process.startTime,
