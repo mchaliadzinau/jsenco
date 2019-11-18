@@ -7,6 +7,14 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "parse.test.js",
+            "program": "${workspaceFolder}/core/parsing.js",
+            "cwd": "${workspaceFolder}",
+            "runtimeVersion": "11.9.0",
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Launch Program",
             "program": "${workspaceFolder}/index.js",
             "runtimeVersion": "11.9.0",

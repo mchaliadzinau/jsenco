@@ -1,4 +1,4 @@
-const {dirname} = require('path');
+const {basename, dirname, extname, join} = require('path');
 const fs = require('fs');
 
 const {createProcess, startProcessesMonitoring} = require('./process');
@@ -24,6 +24,14 @@ const testEngines = (enginesList, RESULTS_LATEST) => {
         const json = JSON.stringify(enginesList);
         const RESULTS_FOLDER = dirname(RESULTS_LATEST);
         !fs.existsSync(RESULTS_FOLDER) && fs.mkdirSync(RESULTS_FOLDER);
+        // save old results file if necessary
+        if(fs.existsSync(RESULTS_LATEST)) {
+            const ext = extname(RESULTS_LATEST);
+            const name = basename(RESULTS_LATEST, ext);
+            const date = new Date().getTime();
+            fs.renameSync(RESULTS_LATEST, join(RESULTS_FOLDER, `${name}.${date}${ext}`) );
+        }
+        // write latest data
         fs.writeFileSync(RESULTS_LATEST, json);
         console.log(json);
     });
@@ -60,16 +68,16 @@ const testEngine = engine => {
  * @param {EnTest.EngineInfo} engine
  * @return {Promise}
  */
-const startEngineTests = engine => (
-    new Promise( (resolve, reject) => {
+const startEngineTests = async engine => {
+    
+    while(engine.testsQueue.length > 0) {
         const test = engine.testsQueue.pop();
-        createProcess( 
-            engine, 
-            test,
-            resolve
-        )
-    })
-);
+        await createProcess(engine, test.plainTestPath);
+        await createProcess(engine, test.benchmarkTestPath);
+    }
+
+    return Promise.resolve(engine);
+};
 
 /**
  * @param {EnTest.EngineInfo[]} enginesList

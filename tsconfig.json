@@ -9,6 +9,7 @@
     },
     "include": [
         "./**/*.js",
+        "./ast.d.ts",
         "./index.d.ts",
         "./node_modules/@types/node/index.d.ts"
     ],
@@ -17,5 +18,6 @@
         "core/tests",
         "node_modules",
         "tests",
+        "test_chamber",
     ]
 }

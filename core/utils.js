@@ -1,3 +1,4 @@
+const FS = require('fs');
 const { execFile }  = require('child_process');
 const path = require('path');
 const { performance } = require('perf_hooks');
@@ -13,7 +14,7 @@ const DRY_MON_INTERWAL = 1000;
 
 const checkIfProcessExists = cp => !(cp.exitCode === 0 || cp.killed);
 
-const checkIfProcessFinishedCorrectly = cp => (cp.exitCode === 0 || !cp.killed);
+const checkIfProcessFinishedCorrectly = process => ( !!process.finishedAt || process.childProcess.exitCode === 0 || !process.childProcess.killed );
 
 /**
  * Print on Same Line (restricted to 80 chars line)
@@ -86,7 +87,7 @@ const execDryRun = (enginePath, isLoop, isBenchmark) => {
                     if(dryLoopMemoryValues.length < DRY_LOOP_MEM_CHECKS_COUNT) {
                         dryLoopMemoryValues.push(mem);
                     } else {
-                        killProcess(dryRunProcess, path.basename(script));
+                        killProcess({childProcess:dryRunProcess}, path.basename(script));
                         clearInterval(dryLoopCheckInterval);
                         resolve(Math.max.apply(null, dryLoopMemoryValues));
                     }
@@ -110,23 +111,34 @@ const getOsDependantFullPath = path => ~process.platform.indexOf('win32') ? `${p
  * @return {void}
  */
 const killProcess = (process, description) => {
-    console.log('# killing', process.pid, `(${description})`)
+    console.log('# killing', process.childProcess.pid, `(${description})`)
     // process.kill();
-    kill(process.pid, err => err && console.error(err) );
+    process.isKilled = true;
+    kill(process.childProcess.pid, err => err && console.error(err) );
 };
 
 /** Parses successful test process output
  * @param {string} engineName - name of the engine running the test
  * @param {string} test - test name
  * @param {string} output - test process stdout
- * @return {string} text
+ * @return {array} text
  */
 const parseTestOutput = (engineName, test, output) => {
     try {
-        return JSON.parse(output);
+        return output.replace(/\r/g,'')
+            .split('\n')
+            .filter(e => !!e)
+            .map(e => JSON.parse(e));
     } catch (e) {
         console.warn('#WARN', engineName, test, 'output is not valid JSON.' );
-        return output.replace(/\n/g, ' ')
+        return [output.replace(/\n/g, ' ')]
+    }
+}
+
+const cleanupTestChamber = (directory) => {
+    const files = FS.readdirSync(directory);
+    for (const file of files) {
+        FS.unlinkSync(path.join(directory, file));
     }
 }
 
@@ -138,5 +150,6 @@ module.exports = {
     execDryRun,
     getOsDependantFullPath,
     killProcess,
-    parseTestOutput
+    parseTestOutput,
+    cleanupTestChamber
 }
