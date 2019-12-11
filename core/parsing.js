@@ -10,6 +10,9 @@ const ERR_SUITE_NOT_FOUND = "BenchmarkSuite is not found!";
 
 const PATH_TEST_CHAMBER = PATH.resolve(process.cwd(), 'test_chamber');
 
+const MARK_START = "START_MARK";
+const MARK_END = "END_MARK";
+
 function parseTests(tests) {  
     cleanupTestChamber(PATH_TEST_CHAMBER);
     const suits = tests.map(test=> {
@@ -179,8 +182,10 @@ function createTestProgramAST(source, index, benchmark) {
     });
     testProgramAST.body.splice( testProgramAST.body.indexOf(loadBenchmarkJsAST) , 1); // Get rid of "load('benchmark.js');"
 
-    testProgramAST.body.push( createFinalTestMarkAST('{"END_MARK": "RAW_TEST_END"}') );
-    testProgramAST.body.push( createEndlessLoopAST() );
+    testProgramAST.body.unshift( createPrintMarkAST(MARK_START, "START") );
+
+    testProgramAST.body.push( createPrintMarkAST(MARK_END, "RAW_TEST_END") );
+    testProgramAST.body.push( createReadLineAST() );
 
     return testProgramAST;
 }
@@ -193,8 +198,10 @@ function createBenchmarkProgramAST(source, index, benchmarkSuite, benchmark) {
         .concat(suiteClone)
         .concat(source.body.slice(index+1, source.body.length));
 
-    ast.body.push( createFinalTestMarkAST('{"END_MARK": "BENCHMARK_TEST_END"}') );
-    ast.body.push( createEndlessLoopAST() );
+    ast.body.unshift( createPrintMarkAST(MARK_START, "START") );
+
+    ast.body.push( createPrintMarkAST(MARK_END, "BENCHMARK_TEST_END") );
+    ast.body.push( createReadLineAST() );
 
     return ast;
 }
@@ -206,7 +213,7 @@ function createArrayAST(...elements){
     }
 }
 
-function createFinalTestMarkAST(markValue) {
+function createPrintMarkAST(name, value) {
     return {
         "type": "ExpressionStatement",
         "expression": {
@@ -216,29 +223,138 @@ function createFinalTestMarkAST(markValue) {
                 "name": "print"
             },
             "arguments": [
-                {
-                    "type": "Literal",
-                    "value": `${markValue}`,
-                    "raw": `'${markValue}'`
-                }
+                createJSONAST([{
+                    "type": "ObjectExpression",
+                    "properties": [
+                      {
+                        "type": "Property",
+                        "method": false,
+                        "shorthand": false,
+                        "computed": false,
+                        "key": {
+                          "type": "Identifier",
+                          "name": name
+                        },
+                        "value": {
+                            "type": "Literal",
+                            "value": `${value}`,
+                            "raw": `'${value}'`
+                        },
+                        "kind": "init"
+                      },
+                      {
+                        "type": "Property",
+                        "method": false,
+                        "shorthand": false,
+                        "computed": false,
+                        "key": {
+                          "type": "Identifier",
+                          "name": "time"
+                        },
+                        "value": createTimeStampAST(),
+                        "kind": "init"
+                      }
+                    ]
+                }])
             ]
         }
     };
 }
 
-function createEndlessLoopAST() {
-    return     {
-        "type": "WhileStatement",
+function createReadLineAST() {
+    return ACORN.parse("readline();");
+}
+
+function createTimeStampAST() {
+    return {
+        "type": "ConditionalExpression",
         "test": {
-          "type": "Literal",
-          "value": true,
-          "raw": "true"
+            "type": "BinaryExpression",
+            "left": {
+                "type": "UnaryExpression",
+                "operator": "typeof",
+                "prefix": true,
+                "argument": {
+                    "type": "Identifier",
+                    "name": "performance"
+                }
+            },
+            "operator": "!==",
+            "right": {
+                "type": "Literal",
+                "value": "undefined",
+                "raw": "'undefined'"
+            }
         },
-        "body": {
-          "type": "BlockStatement",
-          "body": []
+        "consequent": {
+            "type": "CallExpression",
+            "callee": {
+                "type": "MemberExpression",
+                "object": {
+                    "type": "Identifier",
+                    "name": "performance"
+                },
+                "property": {
+                    "type": "Identifier",
+                    "name": "now"
+                },
+                "computed": false
+            },
+            "arguments": []
+        },
+        "alternate": {
+            "type": "ConditionalExpression",
+            "test": {
+                "type": "BinaryExpression",
+                "left": {
+                    "type": "UnaryExpression",
+                    "operator": "typeof",
+                    "prefix": true,
+                    "argument": {
+                        "type": "Identifier",
+                        "name": "preciseTime"
+                    }
+                },
+                "operator": "!==",
+                "right": {
+                    "type": "Literal",
+                    "value": "undefined",
+                    "raw": "'undefined'"
+                }
+            },
+            "consequent": {
+                "type": "CallExpression",
+                "callee": {
+                    "type": "Identifier",
+                    "name": "preciseTime"
+                },
+                "arguments": []
+            },
+            "alternate": {
+                "type": "Identifier",
+                "name": "NaN"
+            }
         }
-      }
+    };
+}
+
+const createJSONAST = (arguments) => {
+    return {
+        "type": "CallExpression",
+        "callee": {
+            "type": "MemberExpression",
+            "object": {
+                "type": "Identifier",
+                "name": "JSON"
+            },
+            "property": {
+                "type": "Identifier",
+                "name": "stringify"
+            },
+            "computed": false
+        },
+        "arguments": arguments
+    };
 }
 
 module.exports = parseTests;

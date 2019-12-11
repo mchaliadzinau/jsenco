@@ -46,16 +46,17 @@ async function createProcess(engine, script) {
 
     childProcess.stdout.on('data', (data) => {
         const output = parseTestOutput(engine.name, script, data.toString());
+        const START_MARK = output.find(e=>!!e['START_MARK']);
+        if(START_MARK) {
+            process.startTime = START_MARK['time'];
+            console.log(START_MARK['START_MARK'], process.startTime);
+        }
+
         const END_MARK = output.find(e=>!!e['END_MARK']);
         if(END_MARK) {
-            process.finishedAt = performance.now();
+            process.finishedAt = END_MARK['time'];
+            childProcess.stdin.write('# STOP');
             console.log(END_MARK['END_MARK'], process.finishedAt);
-            const int = setInterval(() => {
-                if(process.memVals.length >= 4) {
-                    killProcess(process, 'finished');
-                    clearInterval(int);
-                }
-            }, 50);
         }
         stdout += data;
     });
@@ -174,17 +175,17 @@ function handleExecFileResult (engine, script, err, stdout, stderr) {
 function startProcessesMonitoring(TIMEOUT, INTERVAL = 100) {
     return setInterval(() => {
         PROCESSES.forEach(process => {
-            if ( checkIfProcessExists(process.childProcess) && !process.isKilled ) {
+            if ( checkIfProcessExists(process.childProcess) ) {
                 if(performance.now() - process.startTime < TIMEOUT) {
                     pidusageTree(process.childProcess.pid, function(err, stats) {
-                        !process.isKilled && pidUsageCallback(err, stats, process);
+                        pidUsageCallback(err, stats, process);
                     }).catch((e) => {
                         if(process.cpuVals.length + process.memVals.length === 0) {
                             console.warn('#WARN: ', `${process.engine}:${process.script} test ended too quickly. CPU and Memory data will be not available.`);
                         }
                     });
                 } else {
-                    killProcess(process, `${process.script} timeout`);
+                    killProcess(process.childProcess, `${process.script} timeout`);
                     process.isTimedOut = true;
                 }
             }
