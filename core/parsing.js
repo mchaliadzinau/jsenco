@@ -5,6 +5,8 @@ const { generate } = require('astring');
 
 const {cleanupTestChamber} = require('./utils');
 
+const ASTs = require('./ast.utils');
+
 const ERR_SUITE_NOT_ALLOWED = "Multiple BenchmarkSuites are not allowed!";
 const ERR_SUITE_NOT_FOUND = "BenchmarkSuite is not found!";
 
@@ -193,7 +195,7 @@ function createTestProgramAST(source, index, benchmark) {
 function createBenchmarkProgramAST(source, index, benchmarkSuite, benchmark) {
     const ast = JSON.parse( JSON.stringify(source) );
     const suiteClone = JSON.parse( JSON.stringify(benchmarkSuite.ast) );
-    Object.assign(suiteClone, {arguments: [ suiteClone.arguments[0], suiteClone.arguments[1], createArrayAST(benchmark.benchmarkAST) ]})
+    Object.assign(suiteClone, {arguments: [ suiteClone.arguments[0], suiteClone.arguments[1], ASTs.getArrayExpression(benchmark.benchmarkAST) ]})
     ast.body = source.body.slice(0, index)
         .concat(suiteClone)
         .concat(source.body.slice(index+1, source.body.length));
@@ -206,59 +208,26 @@ function createBenchmarkProgramAST(source, index, benchmarkSuite, benchmark) {
     return ast;
 }
 
-function createArrayAST(...elements){
-    return {
-        "type": "ArrayExpression",
-        "elements": elements
-    }
-}
-
 function createPrintMarkAST(name, value) {
-    return {
-        "type": "ExpressionStatement",
-        "expression": {
-            "type": "CallExpression",
-            "callee": {
-                "type": "Identifier",
-                "name": "print"
-            },
-            "arguments": [
-                createJSONAST([{
-                    "type": "ObjectExpression",
-                    "properties": [
-                      {
-                        "type": "Property",
-                        "method": false,
-                        "shorthand": false,
-                        "computed": false,
-                        "key": {
-                          "type": "Identifier",
-                          "name": name
-                        },
-                        "value": {
-                            "type": "Literal",
-                            "value": `${value}`,
-                            "raw": `'${value}'`
-                        },
-                        "kind": "init"
-                      },
-                      {
-                        "type": "Property",
-                        "method": false,
-                        "shorthand": false,
-                        "computed": false,
-                        "key": {
-                          "type": "Identifier",
-                          "name": "time"
-                        },
-                        "value": createTimeStampAST(),
-                        "kind": "init"
-                      }
-                    ]
-                }])
+    return ASTs.getExpressionStatement(
+        ASTs.getCallExpression(
+            ASTs.getIdentifier("print"),
+            [
+                createJSONAST([
+                    ASTs.getObjectExpression([
+                        ASTs.getProperty(
+                            ASTs.getIdentifier(name),
+                            ASTs.getLiteral(value)
+                        ),
+                        ASTs.getProperty(
+                            ASTs.getIdentifier("time"),
+                            createTimeStampAST(),
+                        )
+                    ])
+                ])
             ]
-        }
-    };
+        )
+    );
 }
 
 function createReadLineAST() {
@@ -268,93 +237,40 @@ function createReadLineAST() {
 function createTimeStampAST() {
     return {
         "type": "ConditionalExpression",
-        "test": {
-            "type": "BinaryExpression",
-            "left": {
-                "type": "UnaryExpression",
-                "operator": "typeof",
-                "prefix": true,
-                "argument": {
-                    "type": "Identifier",
-                    "name": "performance"
-                }
-            },
-            "operator": "!==",
-            "right": {
-                "type": "Literal",
-                "value": "undefined",
-                "raw": "'undefined'"
-            }
-        },
-        "consequent": {
-            "type": "CallExpression",
-            "callee": {
-                "type": "MemberExpression",
-                "object": {
-                    "type": "Identifier",
-                    "name": "performance"
-                },
-                "property": {
-                    "type": "Identifier",
-                    "name": "now"
-                },
-                "computed": false
-            },
-            "arguments": []
-        },
+        "test": ASTs.getBinaryExpression(
+            ASTs.getUnaryExpression("typeof", ASTs.getIdentifier("performance")),
+            "!==",
+            ASTs.getLiteral("undefined")
+        ),
+        "consequent": ASTs.getCallExpression(
+            ASTs.getMemberExpression(
+                ASTs.getIdentifier("performance"),
+                ASTs.getIdentifier("now")
+            )
+        ),
         "alternate": {
             "type": "ConditionalExpression",
-            "test": {
-                "type": "BinaryExpression",
-                "left": {
-                    "type": "UnaryExpression",
-                    "operator": "typeof",
-                    "prefix": true,
-                    "argument": {
-                        "type": "Identifier",
-                        "name": "preciseTime"
-                    }
-                },
-                "operator": "!==",
-                "right": {
-                    "type": "Literal",
-                    "value": "undefined",
-                    "raw": "'undefined'"
-                }
-            },
-            "consequent": {
-                "type": "CallExpression",
-                "callee": {
-                    "type": "Identifier",
-                    "name": "preciseTime"
-                },
-                "arguments": []
-            },
-            "alternate": {
-                "type": "Identifier",
-                "name": "NaN"
-            }
+            "test": ASTs.getBinaryExpression(
+                ASTs.getUnaryExpression("typeof", ASTs.getIdentifier("preciseTime")),
+                "!==",
+                ASTs.getLiteral("undefined")
+            ),
+            "consequent": ASTs.getCallExpression(
+                ASTs.getIdentifier("preciseTime")
+            ),
+            "alternate": ASTs.getIdentifier("NaN")
         }
     };
 }
 
 const createJSONAST = (arguments) => {
-    return {
-        "type": "CallExpression",
-        "callee": {
-            "type": "MemberExpression",
-            "object": {
-                "type": "Identifier",
-                "name": "JSON"
-            },
-            "property": {
-                "type": "Identifier",
-                "name": "stringify"
-            },
-            "computed": false
-        },
-        "arguments": arguments
-    };
+    return ASTs.getCallExpression(
+        ASTs.getMemberExpression(
+            ASTs.getIdentifier("JSON"),
+            ASTs.getIdentifier("stringify"),
+        ),
+        arguments
+    );
 }
 
 module.exports = parseTests;
