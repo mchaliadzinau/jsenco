@@ -20,7 +20,7 @@ const PROCESSES = [];
 /** Creates test process for particular Engine
  * @param {EnTest.EngineInfo} engine
  * @param {string} script
- * @return {EnTest.Process} Process
+ * @return {Promise} Process
  */
 async function createProcess(engine, script) {
     let stdout = '';
@@ -55,7 +55,7 @@ async function createProcess(engine, script) {
         const END_MARK = output.find(e=>!!e['END_MARK']);
         if(END_MARK) {
             process.finishedAt = END_MARK['time'];
-            childProcess.stdin.write('# STOP');
+            childProcess.stdin.write('# STOP\n');
             console.log(END_MARK['END_MARK'], process.finishedAt);
         }
         stdout += data;
@@ -67,10 +67,10 @@ async function createProcess(engine, script) {
         // https://nodejs.org/api/child_process.html#child_process_event_close
         childProcess.on('close', (code, signal) => { // If the process exited, code is the final exit code of the process, otherwise null. If the process terminated due to receipt of a signal, signal is the string name of the signal, otherwise null. One of the two will always be non-null.
             if (code !== 0) {
-                const processEndResult = !process.finishedAt ? {
+                const processEndResult = {
                     code: code ? code : null,
                     signal
-                } : null;
+                };
                 handleExecFileResult(engine, script, processEndResult, stdout, stderr);
             } else {
                 handleExecFileResult(engine, script, null, stdout, stderr);
