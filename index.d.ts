@@ -45,7 +45,8 @@ export interface Process {
     cpuVals: number[],
     memVals: number[],
     isTimedOut? : boolean,
-    finishedAt: number
+    finishedAt: number,
+    isKilled: boolean
 }
 
 export interface ProcessStats {
