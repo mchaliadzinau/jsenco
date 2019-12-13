@@ -106,7 +106,7 @@ const execDryRun = (enginePath, isLoop, isBenchmark) => {
 const getOsDependantFullPath = path => ~process.platform.indexOf('win32') ? `${path}.cmd` : path;
 
 /** Kills `NodeJS.Process` and logs it
- * @param {import('child_process').ChildProcess} process - child process object
+ * @param {EnTest.Process} process - child process object
  * @param {string} description - reason of kill
  * @return {void}
  */

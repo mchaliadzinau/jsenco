@@ -20,7 +20,7 @@ const PROCESSES = [];
 /** Creates test process for particular Engine
  * @param {EnTest.EngineInfo} engine
  * @param {string} script
- * @return {EnTest.Process} Process
+ * @return {Promise} Process
  */
 async function createProcess(engine, script) {
     let stdout = '';
@@ -39,23 +39,31 @@ async function createProcess(engine, script) {
         memVals: [],
         isTimedOut: false,
         finishedAt: null,
-        isKilled: false
+        isKilled: false,
+        isTestCompleted: false,
     };
 
     PROCESSES.push(process);
 
     childProcess.stdout.on('data', (data) => {
         const output = parseTestOutput(engine.name, script, data.toString());
+        const START_MARK = output.find(e=>!!e['START_MARK']);
+        if(START_MARK) {
+            process.startTime = START_MARK['time'];
+            console.log(START_MARK['START_MARK'], process.startTime);
+        }
+
         const END_MARK = output.find(e=>!!e['END_MARK']);
         if(END_MARK) {
-            process.finishedAt = performance.now();
+            process.finishedAt = END_MARK['time'];
+            if(process.memVals.length + process.cpuVals.length > 0) {
+                process.isTestCompleted = true;
+                stopCompletedTestProcess(process);
+            } else {
+                process.isTestCompleted = true;
+                // stop process in next invokation of pidUsageCallback()
+            }
             console.log(END_MARK['END_MARK'], process.finishedAt);
-            const int = setInterval(() => {
-                if(process.memVals.length >= 4) {
-                    killProcess(process, 'finished');
-                    clearInterval(int);
-                }
-            }, 50);
         }
         stdout += data;
     });
@@ -66,10 +74,10 @@ async function createProcess(engine, script) {
         // https://nodejs.org/api/child_process.html#child_process_event_close
         childProcess.on('close', (code, signal) => { // If the process exited, code is the final exit code of the process, otherwise null. If the process terminated due to receipt of a signal, signal is the string name of the signal, otherwise null. One of the two will always be non-null.
             if (code !== 0) {
-                const processEndResult = !process.finishedAt ? {
+                const processEndResult = {
                     code: code ? code : null,
                     signal
-                } : null;
+                };
                 handleExecFileResult(engine, script, processEndResult, stdout, stderr);
             } else {
                 handleExecFileResult(engine, script, null, stdout, stderr);
@@ -91,6 +99,13 @@ async function createProcess(engine, script) {
 
 }
 
+const stopCompletedTestProcess = (process) => {
+    if(process.isTestCompleted) {
+        process.childProcess.stdin.write('# STOP\n');
+        process.isTestCompleted = false;
+    }
+}
+
 /** Handle `pidusageTree` callback 
  * @param {string | Error} err
  * @param {EnTest.ProcessStats[]} stats
@@ -109,7 +124,7 @@ const pidUsageCallback = (err, stats, process) => {
     }
     false && console.log(stats);
     const [cpu, mem] = processPidusageStats(stats);
-    if(cpu && mem) {
+    if((cpu && mem) || process.isTestCompleted ) {
         process.cpuVals.push(cpu);
         process.memVals.push(mem);
         if(ARGS[0] === 'debug') {
@@ -117,6 +132,8 @@ const pidUsageCallback = (err, stats, process) => {
         } else {
             printOSL(`${process.script}\t${cpu}\t${mem}`);
         }
+
+        stopCompletedTestProcess(process);
     }
 };
 
@@ -154,7 +171,7 @@ function handleExecFileResult (engine, script, err, stdout, stderr) {
             status: process.isTimedOut 
                 ? `timeout`
                 : `error ${process.childProcess['exitCode'] || process.childProcess['signalCode']}`,
-            extime: performance.now() - process.startTime,
+            extime: (process.finishedAt ? process.finishedAt : performance.now() ) - process.startTime,
             stats: {
                 cpus, mems,
                 maxCPU: Math.max.apply(null, cpus),
@@ -174,18 +191,20 @@ function handleExecFileResult (engine, script, err, stdout, stderr) {
 function startProcessesMonitoring(TIMEOUT, INTERVAL = 100) {
     return setInterval(() => {
         PROCESSES.forEach(process => {
-            if ( checkIfProcessExists(process.childProcess) && !process.isKilled ) {
+            if ( checkIfProcessExists(process.childProcess) ) {
                 if(performance.now() - process.startTime < TIMEOUT) {
                     pidusageTree(process.childProcess.pid, function(err, stats) {
-                        !process.isKilled && pidUsageCallback(err, stats, process);
+                        pidUsageCallback(err, stats, process);
                     }).catch((e) => {
                         if(process.cpuVals.length + process.memVals.length === 0) {
                             console.warn('#WARN: ', `${process.engine}:${process.script} test ended too quickly. CPU and Memory data will be not available.`);
                         }
                     });
                 } else {
-                    killProcess(process, `${process.script} timeout`);
-                    process.isTimedOut = true;
+                    if(!process.isKilled) {
+                        killProcess(process, `${process.script} timeout`);
+                        process.isTimedOut = true;
+                    }
                 }
             }
         });
