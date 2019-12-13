@@ -201,8 +201,10 @@ function startProcessesMonitoring(TIMEOUT, INTERVAL = 100) {
                         }
                     });
                 } else {
-                    killProcess(process, `${process.script} timeout`);
-                    process.isTimedOut = true;
+                    if(!process.isKilled) {
+                        killProcess(process, `${process.script} timeout`);
+                        process.isTimedOut = true;
+                    }
                 }
             }
         });
