@@ -290,6 +290,7 @@ const insertMarkStartIntoAST = (astBody) => {
             ...astBody.slice(lastLoadASTIndex + 1, astBody.length)
         ];
     } else {
+        astBody.unshift(createPrintMarkAST(MARK_START, "START"));
         return astBody;
     }
 }
