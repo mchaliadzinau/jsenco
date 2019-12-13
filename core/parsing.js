@@ -176,15 +176,16 @@ function createTestProgramAST(source, index, benchmark) {
         .concat(benchmark.functionAST.body)
         .concat(testProgramAST.body.slice(index+1, testProgramAST.body.length));
 
+    // Get rid of "load('benchmark.js');"
     const loadBenchmarkJsAST = testProgramAST.body.find(entry => {
         return entry.type === "ExpressionStatement" 
         && entry.expression.callee.type === "Identifier" 
         && entry.expression.callee.name === "load"
         && entry.expression.arguments.find(argument => argument.type === "Literal" && argument.value === "benchmark.js");
     });
-    testProgramAST.body.splice( testProgramAST.body.indexOf(loadBenchmarkJsAST) , 1); // Get rid of "load('benchmark.js');"
+    testProgramAST.body.splice( testProgramAST.body.indexOf(loadBenchmarkJsAST) , 1);
 
-    testProgramAST.body.unshift( createPrintMarkAST(MARK_START, "START") );
+    testProgramAST.body = insertMarkStartIntoAST(testProgramAST.body);
 
     testProgramAST.body.push( createPrintMarkAST(MARK_END, "RAW_TEST_END") );
     testProgramAST.body.push( createReadLineAST() );
@@ -200,7 +201,7 @@ function createBenchmarkProgramAST(source, index, benchmarkSuite, benchmark) {
         .concat(suiteClone)
         .concat(source.body.slice(index+1, source.body.length));
 
-    ast.body.unshift( createPrintMarkAST(MARK_START, "START") );
+    ast.body = insertMarkStartIntoAST(ast.body);
 
     ast.body.push( createPrintMarkAST(MARK_END, "BENCHMARK_TEST_END") );
     ast.body.push( createReadLineAST() );
@@ -271,6 +272,26 @@ const createJSONAST = (arguments) => {
         ),
         arguments
     );
+}
+
+const insertMarkStartIntoAST = (astBody) => {
+    let lastLoadASTIndex = -1;
+    astBody.forEach((entry, idx) => {
+        lastLoadASTIndex = entry.type === "ExpressionStatement" 
+                && entry.expression.callee.type === "Identifier" 
+                && entry.expression.callee.name === "load"
+            ? idx 
+            : lastLoadASTIndex;
+    });
+    if(lastLoadASTIndex >= 0) {
+        return [
+            ...astBody.slice(0, lastLoadASTIndex + 1),
+            createPrintMarkAST(MARK_START, "START"),
+            ...astBody.slice(lastLoadASTIndex + 1, astBody.length)
+        ];
+    } else {
+        return astBody;
+    }
 }
 
 module.exports = parseTests;
