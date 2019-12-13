@@ -155,7 +155,7 @@ function handleExecFileResult (engine, script, err, stdout, stderr) {
             status: process.isTimedOut 
                 ? `timeout`
                 : `error ${process.childProcess['exitCode'] || process.childProcess['signalCode']}`,
-            extime: performance.now() - process.startTime,
+            extime: (process.finishedAt ? process.finishedAt : performance.now() ) - process.startTime,
             stats: {
                 cpus, mems,
                 maxCPU: Math.max.apply(null, cpus),

@@ -12,7 +12,7 @@ fetch(URL_RESULTS)
           ENGINES_LIST.forEach(engine => {
             if(engine) {
               engine.testsPassed.forEach( (result, idx) => {
-                const memoryChartSelector = AddChartBlock(result.stdout ? result.stdout.score : 'N/A', engine.name, result.script, true, idx, 'memory', `min: ${Math.min.apply(null, result.stats.mems)} Mb, max: ${result.stats.maxMem} Mb`)
+                const memoryChartSelector = AddChartBlock(result.stdout ? result.stdout.score : 'N/A', engine.name, result.script, true, idx, 'memory', `min: ${Math.min.apply(null, result.stats.mems)} Mb, max: ${result.stats.maxMem} Mb, time: ${result.extime}`)
                 CreateMemoryChart(memoryChartSelector, result.stats.mems);
               })
             }
