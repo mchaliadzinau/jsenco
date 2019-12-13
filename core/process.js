@@ -39,7 +39,8 @@ async function createProcess(engine, script) {
         memVals: [],
         isTimedOut: false,
         finishedAt: null,
-        isKilled: false
+        isKilled: false,
+        isTestCompleted: false,
     };
 
     PROCESSES.push(process);
@@ -55,7 +56,13 @@ async function createProcess(engine, script) {
         const END_MARK = output.find(e=>!!e['END_MARK']);
         if(END_MARK) {
             process.finishedAt = END_MARK['time'];
-            childProcess.stdin.write('# STOP\n');
+            if(process.memVals.length + process.cpuVals.length > 0) {
+                process.isTestCompleted = true;
+                stopCompletedTestProcess(process);
+            } else {
+                process.isTestCompleted = true;
+                // stop process in next invokation of pidUsageCallback()
+            }
             console.log(END_MARK['END_MARK'], process.finishedAt);
         }
         stdout += data;
@@ -92,6 +99,13 @@ async function createProcess(engine, script) {
 
 }
 
+const stopCompletedTestProcess = (process) => {
+    if(process.isTestCompleted) {
+        process.childProcess.stdin.write('# STOP\n');
+        process.isTestCompleted = false;
+    }
+}
+
 /** Handle `pidusageTree` callback 
  * @param {string | Error} err
  * @param {EnTest.ProcessStats[]} stats
@@ -110,7 +124,7 @@ const pidUsageCallback = (err, stats, process) => {
     }
     false && console.log(stats);
     const [cpu, mem] = processPidusageStats(stats);
-    if(cpu && mem) {
+    if((cpu && mem) || process.isTestCompleted ) {
         process.cpuVals.push(cpu);
         process.memVals.push(mem);
         if(ARGS[0] === 'debug') {
@@ -118,6 +132,8 @@ const pidUsageCallback = (err, stats, process) => {
         } else {
             printOSL(`${process.script}\t${cpu}\t${mem}`);
         }
+
+        stopCompletedTestProcess(process);
     }
 };
 
