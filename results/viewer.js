@@ -11,8 +11,11 @@ fetch(URL_RESULTS)
           const ENGINES_LIST = json;
           ENGINES_LIST.forEach(engine => {
             if(engine) {
+              const rowsCount =  engine.testsPassed.length + engine.testsFailed.length;
+              
+              const engineColumn = AddEngineColumn(ELM_CONTENT, engine);
               engine.testsPassed.forEach( (result, idx) => {
-                const memoryChartSelector = AddChartBlock(result.stdout ? result.stdout.score : 'N/A', engine.name, result.script, true, idx, 'memory', `min: ${Math.min.apply(null, result.stats.mems)} Mb, max: ${result.stats.maxMem} Mb, time: ${result.extime}`)
+                const memoryChartSelector = AddChartBlock(engineColumn,result.stdout ? result.stdout.score : 'N/A', engine.name, result.script, true, idx, 'memory', `min: ${Math.min.apply(null, result.stats.mems)} Mb, max: ${result.stats.maxMem} Mb, time: ${result.extime}`)
                 CreateMemoryChart(memoryChartSelector, result.stats.mems);
               })
             }
@@ -28,22 +31,31 @@ fetch(URL_RESULTS)
       alert("Something went wrong! See console for details.");
     });
 
-function AddChartBlock(score, engineName, testName, isTestPassed, testIdx, chartName, description) {
+function AddEngineColumn(target, engine) {
+  const engineColumn = document.createElement('div');
+  engineColumn.className = engine.name;
+  engineColumn.style.cssText = "position:relative; float: left; width: 600px; padding: 10px; border-right: 1px solid red";
+  engineColumn.innerHTML = `<h2>${engine.name}</h2>`
+  target.append(engineColumn);
+  return engineColumn;
+}
+
+function AddChartBlock(target, score, engineName, testName, isTestPassed, testIdx, chartName, description) {
   const className = `chart ${engineName}-${isTestPassed ? 'passed' : 'failed'}-${testIdx} ${chartName}`;
-  const selector =  `.${ELM_CONTENT.className} .chart.${engineName}-${isTestPassed ? 'passed' : 'failed'}-${testIdx}.${chartName}`;
+  const selector =  `.${target.className} .chart.${engineName}-${isTestPassed ? 'passed' : 'failed'}-${testIdx}.${chartName}`;
 
   const chartBlock = document.createElement('div');
 
   chartBlock.className = className;
 
-  const chartTitle = document.createElement('h2');
-  chartTitle.textContent = `${testName} (${score})`;
-  ELM_CONTENT.append(chartTitle);
-  ELM_CONTENT.append(chartBlock);
+  const chartTitle = document.createElement('h3');
+  chartTitle.textContent = `${testName.split('/').reverse()[0]} (${score})`;
+  target.append(chartTitle);
+  target.append(chartBlock);
   const chartDescription = document.createElement('p');
   chartDescription.className = 'text-center';
   chartDescription.textContent = `${className}(${description})`
-  ELM_CONTENT.append(chartDescription);
+  target.append(chartDescription);
 
   return selector;
 }
