@@ -1,6 +1,7 @@
 import {ChildProcess} from 'child_process';
 
 export interface TestResult {
+    id: number,
     script: string,
     stdout: string,
     stderr: string,
@@ -21,7 +22,7 @@ export interface EngineInfo {
     memOverhead: number,
     timeOverhead: number,
     path: string,
-    testsQueue: string[],
+    testsQueue: ParsedBenchmark[],
     testsPassed: TestResult[],
     testsFailed: TestResult[],
     becnhmarkTimeOverhead?: number,
@@ -38,6 +39,7 @@ export interface EnginesSetup {
 }
 
 export interface Process {
+    id: number,
     script: string,
     engine: string,
     childProcess: ChildProcess,
@@ -70,6 +72,16 @@ export interface RunTestsOptions {
     TIMEOUT: number,
     RESULTS_FOLDER: string,
     RESULTS_LATEST: string,
+}
+
+export interface ParsedBenchmark {
+    name: string,
+    plainTestPath: string,
+    benchmarkTestPath: string,
+}
+export interface ParsedTest {
+    name: string,
+    benchmarks: ParsedBenchmark[],
 }
 
 export as namespace EnTest;

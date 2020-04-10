@@ -7,7 +7,7 @@ const JSVU_JSC = '.jsvu/jsc'
 const JSVU_SM = '.jsvu/sm'
 const JSVU_CHAKRA = '.jsvu/chakra'
 /**
- * @param {string[]} tests
+ * @param {EnTest.ParsedTest[]} tests
  * @return {EnTest.EnginesSetup} EnginesSetup.
  */
 const getEnginesSetup = tests => {
