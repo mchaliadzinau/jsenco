@@ -15,6 +15,11 @@ const PATH_TEST_CHAMBER = PATH.resolve(process.cwd(), 'test_chamber');
 const MARK_START = "START_MARK";
 const MARK_END = "END_MARK";
 
+/**
+ * 
+ * @param {*} tests 
+ * @returns {EnTest.ParsedTest[]}
+ */
 function parseTests(tests) {  
     cleanupTestChamber(PATH_TEST_CHAMBER);
     const suits = tests.map(test=> {

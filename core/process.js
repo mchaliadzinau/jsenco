@@ -22,7 +22,7 @@ const PROCESSES = [];
  * @param {string} script
  * @return {Promise} Process
  */
-async function createProcess(engine, script) {
+async function createProcess(engine, script, idx) {
     let stdout = '';
     let stderr = '';
     const childProcess = spawn(
@@ -31,6 +31,7 @@ async function createProcess(engine, script) {
         {},             // options
     );
     const process = {
+        id: idx,
         script: path.basename(script),
         engine: engine.name,
         childProcess,
@@ -150,6 +151,7 @@ function handleExecFileResult (engine, script, err, stdout, stderr) {
     if(!err && checkIfProcessFinishedCorrectly(process)) {
         const parsedOutput = parseTestOutput(engine.name, script, stdout);
         engine.testsPassed.push({
+            id: process.id,
             script,
             stdout: parsedOutput.find(entry => entry.score && entry.version),
             stderr,
@@ -165,6 +167,7 @@ function handleExecFileResult (engine, script, err, stdout, stderr) {
         });
     } else {
         engine.testsFailed.push({
+            id: process.id,
             script,
             stdout: stdout.replace(/\n/g, ' '),
             stderr,

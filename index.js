@@ -24,9 +24,10 @@ const ENGS = getEnginesSetup( parseTests(tests) );
 
 runTests([
     ENGS.V8, 
-    ENGS.SM
+    ENGS.SM,
+    ENGS.JSC
 ], {
-    TIMEOUT: 240000,
+    TIMEOUT: 120000,
     RESULTS_FOLDER,
     RESULTS_LATEST,
 });

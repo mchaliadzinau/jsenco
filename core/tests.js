@@ -69,11 +69,12 @@ const testEngine = engine => {
  * @return {Promise}
  */
 const startEngineTests = async engine => {
-    
+    let idx = 1;
     while(engine.testsQueue.length > 0) {
         const test = engine.testsQueue.pop();
-        await createProcess(engine, test.plainTestPath);
-        await createProcess(engine, test.benchmarkTestPath);
+        await createProcess(engine, test.plainTestPath, idx);
+        await createProcess(engine, test.benchmarkTestPath, idx);
+        idx++;
     }
 
     return Promise.resolve(engine);
