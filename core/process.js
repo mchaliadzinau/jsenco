@@ -215,7 +215,14 @@ function startProcessesMonitoring(TIMEOUT, INTERVAL = 100) {
     INTERVAL);
 }
 
+const stopProcesses = () => {
+    return Promise.all(PROCESSES.map(process => { 
+        return killProcess(process, `${process.script} forced stop`) 
+    }));
+};
+
 module.exports = {
     createProcess,
-    startProcessesMonitoring
+    startProcessesMonitoring,
+    stopProcesses,
 }

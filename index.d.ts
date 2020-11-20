@@ -1,5 +1,9 @@
 import {ChildProcess} from 'child_process';
 
+export interface TestingState {
+    isStarted: boolean,
+}
+
 export interface TestResult {
     id: number,
     script: string,
@@ -70,8 +74,11 @@ export interface ProcessEndResult {
 
 export interface RunTestsOptions {
     TIMEOUT: number,
-    RESULTS_FOLDER: string,
     RESULTS_LATEST: string,
+    skipBenchmarks?: boolean,
+    skipPlainRun?: boolean,
+    getState: () => TestingState,
+    callback?: () => void,
 }
 
 export interface ParsedBenchmark {

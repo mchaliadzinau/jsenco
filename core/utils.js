@@ -57,6 +57,16 @@ const getDryScriptName = (isLoop, isBenchmark) => {
 };
 
 /**
+ * @param {Function} reject 
+ * @returns {void}
+ */
+const rejectOnProcessStop = reject => {
+    process.once('warning', (warning) => {
+        if(warning.name === 'PSTOP') reject(new Error('PSTOP'));
+    });
+}
+
+/**
  * @param {string} enginePath
  * @param {boolean} isLoop
  * @param {boolean} isBenchmark
@@ -68,6 +78,7 @@ const execDryRun = (enginePath, isLoop, isBenchmark) => {
 
         const script = getDryScriptName(isLoop, isBenchmark);
         const dryRunProcess = execFile(enginePath, [script],{}, (err, stdout, stderr)=>{
+            rejectOnProcessStop(reject);
             if(err || stderr) {
                 return reject({err, stderr, enginePath, script});
             }
@@ -81,6 +92,7 @@ const execDryRun = (enginePath, isLoop, isBenchmark) => {
         if(isLoop) {
             const dryLoopMemoryValues = [];
             const dryLoopCheckInterval = setInterval(() => {
+                rejectOnProcessStop(reject);
                 pidusageTree(dryRunProcess.pid, function(err, stats) {
                     if(err) reject(`#ERR\t${script}\t${err}`);
                     const [cpu, mem] = processPidusageStats(stats);
@@ -108,13 +120,21 @@ const getOsDependantFullPath = path => ~process.platform.indexOf('win32') ? `${p
 /** Kills `NodeJS.Process` and logs it
  * @param {EnTest.Process} process - child process object
  * @param {string} description - reason of kill
- * @return {void}
+ * @return {Promise}
  */
 const killProcess = (process, description) => {
     console.log('# killing', process.childProcess.pid, `(${description})`)
     // process.kill();
     process.isKilled = true;
-    kill(process.childProcess.pid, err => err && console.error(err) );
+    return new Promise((res, rej) => {
+        kill(process.childProcess.pid, err => {
+            if(err) {
+                console.error(err);
+                rej(err);
+            }
+            res(process);
+        });
+    })
 };
 
 /** Parses successful test process output
@@ -147,6 +167,7 @@ module.exports = {
     checkIfProcessFinishedCorrectly,
     printOSL,
     processPidusageStats,
+    rejectOnProcessStop,
     execDryRun,
     getOsDependantFullPath,
     killProcess,
