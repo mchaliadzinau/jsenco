@@ -1,0 +1,19 @@
+version: '3.3'
+services:
+  jsenco: 
+    container_name: jsenco
+    build: .
+    ports: 
+      - "3456:80"
+    command: ["npm", "start"]
+    volumes:
+      - ./tests:/jsenco/tests
+      - ./resultsData:/jsenco/results/data
+      - /jsenco/node_modules/
+      - /jsenco/client/node_modules
+    environment:
+      WATCH_MODE: 1
+networks:
+  default:
+    external:
+      name: isolated_api
