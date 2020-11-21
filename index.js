@@ -20,46 +20,65 @@ const tests = fs.readdirSync(PATH_TESTS, {withFileTypes: true})
     .filter(file => path.extname(file.name) === '.js')
     .map(file=> path.resolve(PATH_TESTS,file.name) );
 
-/** @type {EnTest.EnginesSetup} */
-const ENGS = getEnginesSetup( parseTests(tests) );
-
-const state = {
-    isStarted: true,
-    stopTesting() {
+const app = {
+    _testsResultPromise: null,
+    isStarted: false,
+    isFinished: false,
+    async stopTesting() {
         this.isStarted = false;
+        const processes = await stopProcesses();
+        return new Promise(res => {
+            if(this.isFinished) {
+                res();
+            } else {
+                process.emitWarning('Stopping all processes...', 'PSTOP');
+                this._testsResultPromise.catch(e => {
+                    if(e && e.message === 'PSTOP') {
+                        res();
+                    }
+                })
+            }
+        })
+    },
+    startTesting() {
+        console.log('Starting testing...');
+    
+        this.isStarted = true;
+        this.isFinished = false;
+    
+        /** @type {EnTest.EnginesSetup} */
+        const ENGS = getEnginesSetup( parseTests(tests) );
+
+        this._testsResultPromise = runTests([
+            ENGS.V8, 
+            // ENGS.SM,
+            // ENGS.JSC
+        ], {
+            TIMEOUT: 120000,
+            RESULTS_LATEST,
+            skipBenchmarks: true,
+            skipPlainRun: false,
+            getState() {
+                return {isStarted: app.isStarted}
+            }
+        }).then(() => {
+            this.isFinished = true;
+        });
+
+        return this._testsResultPromise;
     }
 };
 
-const startTesting = () => {
-    state.isStarted = true;
-    return runTests([
-        ENGS.V8, 
-        ENGS.SM,
-        ENGS.JSC
-    ], {
-        TIMEOUT: 120000,
-        RESULTS_LATEST,
-        skipBenchmarks: true,
-        skipPlainRun: false,
-        getState() {
-            return Object.assign({}, state);
-        }
-    });
-};
-startTesting();
+app.startTesting();
 
 fs.watch(PATH_TESTS, async (eventType, filename) => {
-    console.log(`event type is: ${eventType}`);
-    if (filename && state.isStarted) {
+    console.log(`event type is: ${eventType} AASDA`);
+    if (filename && app.isStarted) {
       console.log(`filename provided: ${filename}`);
       console.log('Stopping all processes...');
-      process.emitWarning('Stopping all processes...', 'PSTOP');
-      state.stopTesting();
-      await stopProcesses();
-
-      console.log('Restarting testing...');
-      startTesting();
-    } else {
-      console.log('filename not provided');
+      await app.stopTesting();
+      app.startTesting();
+    } else if(app.isFinished) {
+        app.startTesting();
     }
 });

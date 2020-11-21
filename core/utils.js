@@ -12,7 +12,7 @@ const TEST_DRYLOOP_BENCHMARK = path.resolve(process.cwd(), 'core/tests/dryloop.b
 const DRY_LOOP_MEM_CHECKS_COUNT = 4;
 const DRY_MON_INTERWAL = 1000;
 
-const checkIfProcessExists = cp => !(cp.exitCode === 0 || cp.killed);
+const checkIfProcessExists = cp => !(cp.exitCode === 0 || cp.killed || ['SIGTERM', 'SIGKILL'].includes(cp.signalCode));
 
 const checkIfProcessFinishedCorrectly = process => ( !!process.finishedAt || process.childProcess.exitCode === 0 || !process.childProcess.killed );
 
@@ -21,8 +21,9 @@ const checkIfProcessFinishedCorrectly = process => ( !!process.finishedAt || pro
  * @param {string} text 
  */
 const printOSL = text => {
-    process.stdout.write('                                                                                \033[0G');
-    process.stdout.write(text + '\033[0G');
+    // process.stdout.write('                                                                                \033[0G');
+    // process.stdout.write(text + '\033[0G');
+    process.stdout.write(text + '\n');
 }
 
 /** Gets total Memory and CPU used by process
@@ -74,11 +75,12 @@ const rejectOnProcessStop = reject => {
  */
 const execDryRun = (enginePath, isLoop, isBenchmark) => {
     return new Promise((resolve,reject) => {
+        rejectOnProcessStop(reject);
+
         const startTime = performance.now();
 
         const script = getDryScriptName(isLoop, isBenchmark);
         const dryRunProcess = execFile(enginePath, [script],{}, (err, stdout, stderr)=>{
-            rejectOnProcessStop(reject);
             if(err || stderr) {
                 return reject({err, stderr, enginePath, script});
             }
@@ -92,7 +94,6 @@ const execDryRun = (enginePath, isLoop, isBenchmark) => {
         if(isLoop) {
             const dryLoopMemoryValues = [];
             const dryLoopCheckInterval = setInterval(() => {
-                rejectOnProcessStop(reject);
                 pidusageTree(dryRunProcess.pid, function(err, stats) {
                     if(err) reject(`#ERR\t${script}\t${err}`);
                     const [cpu, mem] = processPidusageStats(stats);
@@ -127,7 +128,7 @@ const killProcess = (process, description) => {
     // process.kill();
     process.isKilled = true;
     return new Promise((res, rej) => {
-        kill(process.childProcess.pid, err => {
+        kill(process.childProcess.pid, 'SIGKILL', err => {
             if(err) {
                 console.error(err);
                 rej(err);

@@ -64,8 +64,8 @@ const testEngine = (engine, options) => {
             });
         })
     }).catch(e => {
-        if(e.message === 'PSTOP') {
-            console.log('Testing was stopped by request.')
+        if(e && e.message === 'PSTOP') {
+            throw e;
         } else if(engine.testsPassed.length + engine.testsFailed.length === 0) {
             const error = `Failed to execute tests on ${engine.name}.`
             engine.errors = [error]
@@ -84,10 +84,14 @@ const startEngineTests = (engine, options) => {
         let idx = 1;
         rejectOnProcessStop(reject);
     
-        while(engine.testsQueue.length > 0 && options.getState().isStarted) {
+        while(engine.testsQueue.length > 0) {
             const test = engine.testsQueue.pop();
-            !options.skipPlainRun && await createProcess(engine, test.plainTestPath, idx);
-            !options.skipBenchmarks && await createProcess(engine, test.benchmarkTestPath, idx);
+            if(!options.skipPlainRun && options.getState().isStarted) {
+                await createProcess(engine, test.plainTestPath, idx);
+            }
+            if(!options.skipBenchmarks && options.getState().isStarted) {
+                await createProcess(engine, test.benchmarkTestPath, idx);
+            }
             idx++;
         }
 
@@ -111,7 +115,14 @@ const runTests = (enginesList, options) => {
         process.exit();
     }
     const interval = startProcessesMonitoring(options.TIMEOUT);
-    return testEngines(enginesList, options, options.callback).then(()=> clearInterval(interval))
+    return testEngines(enginesList, options, options.callback)
+        .then(()=> clearInterval(interval))
+        .catch(e => {
+            clearInterval(interval)
+            if(e && e.message === 'PSTOP') {
+                throw e;
+            }
+        })
 }
 module.exports = {
     runTests

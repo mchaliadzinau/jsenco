@@ -114,7 +114,7 @@ const stopCompletedTestProcess = (process) => {
  */
 
 const pidUsageCallback = (err, stats, process) => {
-    if( !checkIfProcessExists(process.childProcess) ) {
+    if(process.isKilled || !checkIfProcessExists(process.childProcess) ) {
         return;
     } else if(err) {
         console.error(err);
@@ -147,42 +147,44 @@ const pidUsageCallback = (err, stats, process) => {
  */
 function handleExecFileResult (engine, script, err, stdout, stderr) {
     const process = PROCESSES.pop();
-    const [cpus, mems] = [process.cpuVals, process.memVals];
-    if(!err && checkIfProcessFinishedCorrectly(process)) {
-        const parsedOutput = parseTestOutput(engine.name, script, stdout);
-        engine.testsPassed.push({
-            id: process.id,
-            script,
-            stdout: parsedOutput.find(entry => entry.score && entry.version),
-            stderr,
-            status: 'success',
-            extime: (process.finishedAt ? process.finishedAt : performance.now() ) - process.startTime,
-            stats: {
-                cpus, mems,
-                maxCPU: Math.max.apply(null, cpus),
-                minCPU: Math.min.apply(null, cpus),
-                maxMem: Math.max.apply(null, mems),
-                minMem: Math.min.apply(null, mems),
-            }
-        });
-    } else {
-        engine.testsFailed.push({
-            id: process.id,
-            script,
-            stdout: stdout.replace(/\n/g, ' '),
-            stderr,
-            status: process.isTimedOut 
-                ? `timeout`
-                : `error ${process.childProcess['exitCode'] || process.childProcess['signalCode']}`,
-            extime: (process.finishedAt ? process.finishedAt : performance.now() ) - process.startTime,
-            stats: {
-                cpus, mems,
-                maxCPU: Math.max.apply(null, cpus),
-                minCPU: Math.min.apply(null, cpus),
-                maxMem: Math.max.apply(null, mems),
-                minMem: Math.min.apply(null, mems),
-            }
-        });    
+    if(process) {
+        const [cpus, mems] = [process.cpuVals, process.memVals];
+        if(!err && checkIfProcessFinishedCorrectly(process)) {
+            const parsedOutput = parseTestOutput(engine.name, script, stdout);
+            engine.testsPassed.push({
+                id: process.id,
+                script,
+                stdout: parsedOutput.find(entry => entry.score && entry.version),
+                stderr,
+                status: 'success',
+                extime: (process.finishedAt ? process.finishedAt : performance.now() ) - process.startTime,
+                stats: {
+                    cpus, mems,
+                    maxCPU: Math.max.apply(null, cpus),
+                    minCPU: Math.min.apply(null, cpus),
+                    maxMem: Math.max.apply(null, mems),
+                    minMem: Math.min.apply(null, mems),
+                }
+            });
+        } else {
+            engine.testsFailed.push({
+                id: process.id,
+                script,
+                stdout: stdout.replace(/\n/g, ' '),
+                stderr,
+                status: process.isTimedOut 
+                    ? `timeout`
+                    : `error ${process.childProcess['exitCode'] || process.childProcess['signalCode']}`,
+                extime: (process.finishedAt ? process.finishedAt : performance.now() ) - process.startTime,
+                stats: {
+                    cpus, mems,
+                    maxCPU: Math.max.apply(null, cpus),
+                    minCPU: Math.min.apply(null, cpus),
+                    maxMem: Math.max.apply(null, mems),
+                    minMem: Math.min.apply(null, mems),
+                }
+            });    
+        }
     }
 }
 
