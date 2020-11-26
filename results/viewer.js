@@ -150,9 +150,17 @@ function CreateMemoryChart(selector, data) {
     .text(function(d) { return d; });
 }
 
-const sendStopCommand = () => fetch(URL_STOP, {
-  method: 'POST'
-});
+const sendStopCommand = () => {
+  if(confirm('Confirm server stop (this tab will be closed):')) {
+    fetch(URL_STOP, {
+      method: 'POST'
+    }).then(response => {
+      if(response.ok) {
+        window.close();
+      }
+    });
+  }
+}
 
 fetchResultsList();
 fetchResult(URL_RESULTS_LATEST);
