@@ -91,7 +91,6 @@ const servePostRequest = (request, response) => {
 };
 
 httpServer = http.createServer((request, response) => {
-    console.log(request.method + ' ' + request.url);
     switch(request.method) {
         case 'GET': {
             serveGetRequest(request, response);
