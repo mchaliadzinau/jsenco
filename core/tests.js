@@ -95,8 +95,13 @@ const runTests = (enginesList, options) => {
         console.error('#ERR runTests(): No options were provided.');
         process.exit();
     }
-    const interval = startProcessesMonitoring(options.TIMEOUT);
-    return testEngines(enginesList, options.RESULTS_LATEST).then(()=> clearInterval(interval))
+
+    if(enginesList.length > 0) {
+        const interval = startProcessesMonitoring(options.TIMEOUT);
+        return testEngines(enginesList, options.RESULTS_LATEST).then(()=> clearInterval(interval))
+    } else {
+        return Promise.resolve([]);
+    }
 }
 module.exports = {
     runTests

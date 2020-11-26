@@ -12,6 +12,8 @@ RUN mkdir -p /${FOLDER}/results
 WORKDIR /${FOLDER}
 
 COPY ./core /${FOLDER}/core
+COPY ./server /${FOLDER}/server
+COPY ./results /${FOLDER}/results
 COPY ./benchmark.js /${FOLDER}/benchmark.js
 COPY ./index.js /${FOLDER}/index.js
 COPY ./package.json /${FOLDER}/package.json
@@ -19,7 +21,7 @@ COPY ./package.json /${FOLDER}/package.json
 WORKDIR /${FOLDER}
 RUN npm install
 
-ENV PORT 80
-EXPOSE 80
+ENV PORT 3333
+EXPOSE 3333
 
-CMD ["node", "index.js"]
+ENTRYPOINT ["node", "index.js"]

@@ -4,16 +4,13 @@ services:
     container_name: jsenco
     build: .
     ports: 
-      - "3456:80"
+      - "3333:3333"
     command: ["npm", "start"]
     volumes:
-      - .:/jsenco
-      # - ./tests:/jsenco/tests
-      # - ./resultsData:/jsenco/results/data
-      # - /jsenco/node_modules/
-      # - /jsenco/client/node_modules
+      - ./tests:/jsenco/tests
+      - ./resultsData:/jsenco/results/data
     environment:
-      WATCH_MODE: 1
+      PORT: 3333
 networks:
   default:
     external:
