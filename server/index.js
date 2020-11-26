@@ -13,11 +13,18 @@ const MEDIA_TYPES = {
     JPG: 'image/jpeg',
 };
 
+let httpServer = null;
+
 const handle404Response = (response, err) => {
     console.error(err);
     response.statusCode = 404;
     return response.end('Nothing here...');
-} 
+};
+
+const handleResponse = (response, data, contentType) => {
+    response.setHeader('Content-Type', contentType);
+    response.end(data);
+};
 
 const handleFileResponse = (filePath, response, mediaType = null) => (err, data) => {
     if(err) {
@@ -34,15 +41,17 @@ const handleFileResponse = (filePath, response, mediaType = null) => (err, data)
             }
         }
     
-        response.setHeader('Content-Type', contentType);
-        response.end(data);
+        handleResponse(response, data, contentType);
     }
 };
 
-const serveGetRequest = (request, response) => {
-    const urlSegments = request.url !== '/' 
+const getUrlSegments = request => 
+    request.url !== '/' 
         ? request.url.split('/')
         : [];
+
+const serveGetRequest = (request, response) => {
+    const urlSegments = getUrlSegments(request);
 
     switch(request.url) {
         case '/': {
@@ -54,8 +63,7 @@ const serveGetRequest = (request, response) => {
                 if(err) {
                     handle404Response(response, err);
                 } else {
-                    response.setHeader('Content-Type', MEDIA_TYPES.JSON);
-                    response.end(JSON.stringify(files));
+                    handleResponse(response, JSON.stringify(files), MEDIA_TYPES.JSON);
                 }
               });
         }; break;
@@ -65,12 +73,32 @@ const serveGetRequest = (request, response) => {
     }
 };
 
-const httpServer = http.createServer((request, response) => {
+const servePostRequest = (request, response) => {
+    switch(request.url) {
+        case '/stop': {
+            const message = 'Server is shutting down...';
+            handleResponse(response, JSON.stringify({message}), MEDIA_TYPES.JSON);
+            setTimeout(() => {
+                httpServer.close(() => {
+                    console.log(message);
+                    process.exit(0);
+                });
+            }, 5000);
+        } break;
+        default: 
+            handle404Response(response, `No handler for ${request.url}`);
+    }
+};
+
+httpServer = http.createServer((request, response) => {
     console.log(request.method + ' ' + request.url);
     switch(request.method) {
         case 'GET': {
             serveGetRequest(request, response);
         }; break;
+        case 'POST': {
+            servePostRequest(request, response);
+        }
     }
 });
 

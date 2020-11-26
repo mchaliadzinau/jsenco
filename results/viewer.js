@@ -4,6 +4,7 @@ const ELM_CONTENT = document.querySelector('body > div.content');
 const URL_RESULTS_LIST = 'results';
 const URL_RESULTS_FOLDER = 'data/';
 const URL_RESULTS_LATEST = URL_RESULTS_FOLDER+'latest.json';
+const URL_STOP = '/stop';
 
 const fetchResultsList = () => {
   const optionsList = document.querySelector('#results-list');
@@ -148,6 +149,10 @@ function CreateMemoryChart(selector, data) {
     .style("height", function(d) { return (100 * d / max) + "%"; })
     .text(function(d) { return d; });
 }
+
+const sendStopCommand = () => fetch(URL_STOP, {
+  method: 'POST'
+});
 
 fetchResultsList();
 fetchResult(URL_RESULTS_LATEST);
