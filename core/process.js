@@ -128,7 +128,7 @@ const pidUsageCallback = (err, stats, process) => {
     if((cpu && mem) || process.isTestCompleted ) {
         process.cpuVals.push(cpu);
         process.memVals.push(mem);
-        if(ARGS[0] === 'debug') {
+        if(ARGS[1] === 'debug') {
             console.log(process.script, '\t', cpu, '\t', mem );
         } else {
             printOSL(`${process.script}\t${cpu}\t${mem}`);

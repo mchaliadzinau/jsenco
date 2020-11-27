@@ -35,7 +35,6 @@ export interface EnginesSetup {
     V8: EngineInfo,
     JSC: EngineInfo,
     SM: EngineInfo,
-    CHAKRA: EngineInfo,
 }
 
 export interface Process {
