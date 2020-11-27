@@ -1,37 +1,76 @@
 var data = [30, 86, 168, 281, 303, 365];
 const chartBlock = '<div class="chart"></div>';
 const ELM_CONTENT = document.querySelector('body > div.content');
-const URL_RESULTS = 'data/latest.json';
+const URL_RESULTS_LIST = 'results';
+const URL_RESULTS_FOLDER = 'data/';
+const URL_RESULTS_LATEST = URL_RESULTS_FOLDER+'latest.json';
+const URL_STOP = '/stop';
 
-fetch(URL_RESULTS)
-    .then(function (response) {
+const fetchResultsList = () => {
+  const optionsList = document.querySelector('#results-list');
+  fetch(URL_RESULTS_LIST)
+    .then(response => {
       if(response.ok) {
         response.json().then(json => {
-          
-          const ENGINES_LIST = json;
-          ENGINES_LIST.forEach(engine => {
-            if(engine) {
-              CreateBaseLayout(engine);
+          json.forEach(fileName => {
+            const option = document.createElement('option');
+            option.value = fileName;
 
-              engine.testsPassed.forEach( (result) => {
-                AddChartBlock(result.script, true, engine.name, 'memory', result);
-              })
-
-              engine.testsFailed.forEach( (result) => {
-                AddChartBlock(result.script, false, engine.name, 'memory', result);
-              })
+            const fileNameSegments = fileName.split('.');
+            if(fileNameSegments.length === 3) {
+              const timestamp = parseInt(fileNameSegments[1]);
+              option.innerHTML = isNaN(timestamp) == false 
+                ? new Date(timestamp).toUTCString()
+                : fileName;
+            } else if(fileNameSegments.length === 2) {
+              option.innerHTML = fileNameSegments[0];
+            } else {
+              option.innerHTML = fileName;
             }
+            
+            optionsList.append(option);
           });
-  
-        });
-      } else {
-        alert('Cannot fetch data from ' + URL_RESULTS);
-      }
-    })
-    .catch(function (err) {
-      console.log("Something went wrong!", err);
-      alert("Something went wrong! See console for details.");
+        })
+      };
+    }).then(() => {
+      optionsList.addEventListener('change', (e) => {
+        fetchResult(URL_RESULTS_FOLDER + e.target.value);
+      });
     });
+};
+
+const fetchResult = url => {
+  fetch(url)
+      .then(function (response) {
+        if(response.ok) {
+          response.json().then(json => {
+            ClearBaseLayout();
+
+            const ENGINES_LIST = json;
+            ENGINES_LIST.forEach(engine => {
+              if(engine) {
+                CreateBaseLayout(engine);
+
+                engine.testsPassed.forEach( (result) => {
+                  AddChartBlock(result.script, true, engine.name, 'memory', result);
+                })
+
+                engine.testsFailed.forEach( (result) => {
+                  AddChartBlock(result.script, false, engine.name, 'memory', result);
+                })
+              }
+            });
+    
+          });
+        } else {
+          alert('Cannot fetch data from ' + url);
+        }
+      })
+      .catch(function (err) {
+        console.log("Something went wrong!", err);
+        alert("Something went wrong! See console for details.");
+      });
+};
 
 function CreateBaseLayout(engine) {
   const rowsCount =  engine.testsPassed.length / 2 + engine.testsFailed.length / 2; // total count of tests (raw test and benchmark counts as one)
@@ -42,6 +81,10 @@ function CreateBaseLayout(engine) {
           resultBlock.className = 'test test-' + i;
     engineColumn.append(resultBlock);
   }
+}
+
+function ClearBaseLayout() {
+  ELM_CONTENT.innerHTML = '';
 }
 
 function AddEngineColumn(target, engine) {
@@ -106,3 +149,18 @@ function CreateMemoryChart(selector, data) {
     .style("height", function(d) { return (100 * d / max) + "%"; })
     .text(function(d) { return d; });
 }
+
+const sendStopCommand = () => {
+  if(confirm('Confirm server stop (this tab will be closed):')) {
+    fetch(URL_STOP, {
+      method: 'POST'
+    }).then(response => {
+      if(response.ok) {
+        window.close();
+      }
+    });
+  }
+}
+
+fetchResultsList();
+fetchResult(URL_RESULTS_LATEST);

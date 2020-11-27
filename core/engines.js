@@ -1,11 +1,11 @@
 const path = require('path');
 const {getOsDependantFullPath} = require('./utils');
 
-const [V8, JSC, SM, CHAKRA] = ['V8','JSC','SM','CHAKRA'];
+const [V8, JSC, SM] = ['V8','JSC','SM'];
 const JSVU_V8 = '.jsvu/v8';
 const JSVU_JSC = '.jsvu/jsc'
 const JSVU_SM = '.jsvu/sm'
-const JSVU_CHAKRA = '.jsvu/chakra'
+
 /**
  * @param {EnTest.ParsedTest[]} tests
  * @return {EnTest.EnginesSetup} EnginesSetup.
@@ -17,7 +17,7 @@ const getEnginesSetup = tests => {
         return acc.concat(flattenSuits);
     }, []);
     return {
-        list: [V8, JSC, SM, CHAKRA],
+        list: [V8, JSC, SM],
         V8: {
             name: 'V8',
             memOverhead: 0, timeOverhead: 0,
@@ -36,16 +36,10 @@ const getEnginesSetup = tests => {
             path: getOsDependantFullPath( path.resolve(process.env.HOME,JSVU_SM) ),
             testsQueue: [...suits], testsPassed: [], testsFailed: []
         },
-        CHAKRA: {
-            name: 'CHAKRA',
-            memOverhead: 0, timeOverhead: 0,
-            path: getOsDependantFullPath( path.resolve(process.env.HOME,JSVU_CHAKRA) ),
-            testsQueue: [...suits], testsPassed: [], testsFailed: []
-        }
     };
 };
 
 module.exports = {
-    V8, JSC, SM, CHAKRA,
+    V8, JSC, SM,
     getEnginesSetup
 }
