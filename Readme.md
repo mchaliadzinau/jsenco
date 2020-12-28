@@ -9,16 +9,16 @@
   > \* for single and bencmark passes
 _______________________________________________________________________________________________________________________
 ## Usage with Docker
-  1) Build image manually or pull it `docker pull rv4flyver/jsenco`. 
-  2) Place test files in `test` folder (for test examples see https://github.com/rv4Flyver/jsenco/tree/master/tests).
-  2) Run it with following command with optional params (see `Parameters` section):  
+  1) Build image manually or pull it `docker pull rv4flyver/jsenco`   
+  2) Place test files in `test` folder (for test examples see https://github.com/rv4Flyver/jsenco/tree/master/tests)   
+  3) Run it with following command with optional params (see `Parameters` section):    
     
     docker run -it -p 3333:3333 \
       -v "$(pwd)"/tests:/jsenco/tests \
       -v "$(pwd)"/results:/jsenco/results/data \
       rv4flyver/jsenco
   
-  3) Open `http://localhost:3333` to view results after all tests completed.  
+  3) Open `http://localhost:3333` to view results after all tests completed.   
 
 ## Usage w/o docker  
   1) Install [JSVU](https://github.com/GoogleChromeLabs/jsvu#installation)  
